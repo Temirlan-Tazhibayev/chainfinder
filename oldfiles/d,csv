@@ -1,0 +1,52 @@
+{'id': 171381426, 
+'identifier': '230340030237', 
+'title': 'CARGO SHIP, ТОО', 
+'name': 'ТОВАРИЩЕСТВО С ОГРАНИЧЕННОЙ ОТВЕТСТВЕННОСТЬЮ "CARGO SHIP"', 
+'name_en': 'LIMITED LIABILITY PARTNERSHIP "CARGO SHIP"', 
+'name_native': '"CARGO SHIP" ЖАУАПКЕРШІЛІГІ ШЕКТЕУЛІ СЕРІКТЕСТІГІ', 
+'company_size': 'Малое предприятие',
+ 'jurisdiction': 'kz', 
+ 'inactive': False, 
+ 'addresses': [
+    {'raw': 'г.Астана, район Байқоңыр, Шоссе Алаш, здание 64', 
+    'state': 'Астана', 'path': 'astana', 'area': 'Г. Район Байқоңыр', 
+    'street': 'Шоссе Алаш', 'building': 'Здание 64', 'apt': None
+    }
+], 
+'headcount': [
+    {'count': '6 - 10', 
+    'date': '2023-03-27T00:00:00Z'
+    }
+    ], 
+    
+'industry_codes': [{'code': '1500', 'description': '', 'is_main': True}], 
+
+'officers': [
+    {'identifier': '740830350131', 'name': 'Воробьев Сергей Владимирович', 'name_en': "Vorob'Ev Sergej Vladimirovich", 'name_native': 'Воробьев Сергей Владимирович', 'role': 'head', 'start_date': '2023-03-24T00:00:00Z', 'end_date': None, 'inactive': False, 'contacts': None}]}
+
+
+company = Company(
+    identifier=data['identifier'],
+    title=data['title'],
+    name=data['name'],
+    name_en=data['name_en'],
+    name_native=data['name_native'],
+    company_size=data['company_size'],
+    jurisdiction=data['jurisdiction'],
+    inactive=data['inactive'],
+    headcount=data['headcount'],
+    industry_codes=data['industry_codes'],
+    officers=data['officers']
+    
+    
+    state = Column(String)
+    path = Column(String)
+    area = Column(String)
+    street = Column(String)
+    building = Column(String)
+    apt = Column(String)
+
+
+)
+
+ company_id = Column(Integer)

@@ -1,6 +1,13 @@
 <?php require("config.php") ?>
 <?php require("headers/headers.php") ?>
 
+
+<?php
+      $inputAddress = $_POST['input-address'] ?? '';
+      $outputAddress = $_POST['output-address'] ?? '';
+
+      $transactioncount = $_POST['transaction-count'] ?? '50';
+?>
 <body>
     <div class="container-fluid">
         <div class="row">
@@ -18,16 +25,13 @@
             <div class="form-container">
               <h2>Bitcoin Transaction Search</h2>
               <form action="" method="post">
-                <label for="input-address">Input Address:</label>
-                <input type="text" name="input-address" id="input-address" placeholder="Enter input address">
-                <label for="output-address">Output Address:</label>
-                <input type="text" name="output-address" id="output-address" placeholder="Enter output address">
-                <input type="submit" value="Search">
-              </form>
-
-              <form action="" method="post">
+                <label for="input-address">Sender Address:</label>
+                <input type="text" value="<?php if (!empty($inputAddress)){echo $inputAddress;} ?>" name="input-address" id="input-address" placeholder="Enter input address">
+                <label for="output-address">Receiver Address:</label>
+                <input type="text"  value="<?php if (!empty($outputAddress)){echo $outputAddress;} ?>"  name="output-address" id="output-address" placeholder="Enter output address">
                 <label for="transaction-count">Transaction Count:</label>
-                <input type="number" name="transaction-count" id="transaction-count" placeholder="Enter transaction count">
+                <input type="number" value="<?php if (!empty($transactioncount)){echo $transactioncount;} ?>" name="transaction-count" id="transaction-count" placeholder="Enter transaction count">
+
                 <input type="submit" value="Search">
               </form>
             </div>
@@ -38,29 +42,29 @@
 
 
     <?php
-      $inputAddress = $_POST['input-address'] ?? '';
-      $outputAddress = $_POST['output-address'] ?? '';
-
-      $transactioncount = $_POST['transaction-count'] ?? '50';
 
 
-      if (!empty($inputAddress) && !empty($outputAddress)) {
+
+      if (!empty($inputAddress) && !empty($outputAddress)) 
+      {
         $query = "SELECT a.block_id, a.transaction_hash, a.time, a.value_usd, a.recipient as sender, b.recipient as receiver FROM inputs a
-        INNER JOIN outputs b ON a.transaction_hash = b.transaction_hash WHERE a.recipient = ? AND b.recipient = ?";
+        INNER JOIN outputs b ON a.transaction_hash = b.transaction_hash WHERE a.recipient = ? AND b.recipient = ? LIMIT $transactioncount";
         $stmt = $conn->prepare($query);
         $stmt->execute(array($inputAddress, $outputAddress));
-      } elseif (!empty($inputAddress)) {
-          $query = "SELECT a.block_id, a.transaction_hash, a.time, a.value_usd, a.recipient as sender, b.recipient as receiver FROM inputs a
-          INNER JOIN outputs b ON a.transaction_hash = b.transaction_hash WHERE a.recipient = ?";
-          $stmt = $conn->prepare($query);
-        $stmt->execute(array($inputAddress));
-      }
-      elseif (!empty($outputAddress))
+      } 
+      elseif (!empty($inputAddress) && empty($outputAddress)) 
       {
           $query = "SELECT a.block_id, a.transaction_hash, a.time, a.value_usd, a.recipient as sender, b.recipient as receiver FROM inputs a
-          INNER JOIN outputs b ON a.transaction_hash = b.transaction_hash WHERE a.recipient = ?";
-        $stmt = $conn->prepare($query);
-        $stmt->execute(array($outputAddress));
+          INNER JOIN outputs b ON a.transaction_hash = b.transaction_hash WHERE a.recipient = ? LIMIT $transactioncount";
+          $stmt = $conn->prepare($query);
+          $stmt->execute(array($inputAddress));
+      }
+      elseif (empty($inputAddress) && !empty($outputAddress))
+      {
+          $query = "SELECT a.block_id, a.transaction_hash, a.time, a.value_usd, a.recipient as sender, b.recipient as receiver FROM inputs a
+          INNER JOIN outputs b ON a.transaction_hash = b.transaction_hash WHERE b.recipient = ? LIMIT $transactioncount";
+          $stmt = $conn->prepare($query);
+          $stmt->execute(array($outputAddress));
       }
 
       else
@@ -68,7 +72,9 @@
           $query = "SELECT a.block_id, a.transaction_hash, a.time, a.value_usd, a.recipient as sender, b.recipient as receiver FROM inputs a
           INNER JOIN outputs b ON a.transaction_hash = b.transaction_hash LIMIT $transactioncount";
           $stmt = $conn->query($query);
+
       }
+
       // преобразование результата в массив ассоциативных массивов
       $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
       // закрытие соединения с базой данных
@@ -89,13 +95,16 @@
 // ]
 
     var data = <?php echo $json ?>;
-    const width = 1200;
-    const height = 800;
+    const width = 100;
+    const height = 100;
 
     const svg = d3.select('#graph-container')
       .append('svg')
-        .attr('width', width)
-        .attr('height', height);
+        .attr('viewBox', `0 0 ${width} ${height}`)
+        .attr('preserveAspectRatio', 'xMinYMin meet')
+        .style('width', '100%')
+        .style('height', '100%');
+
 
     const g = svg.append('g');
 
@@ -213,3 +222,6 @@
     </script>
   </body>
 </html>
+
+
+

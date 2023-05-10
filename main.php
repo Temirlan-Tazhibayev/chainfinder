@@ -2,34 +2,38 @@
 <?php require("headers/headers.php") ?>
 
 <body>
-    <div class="container">
-        <div id="graph-container">
+    <div class="container-fluid">
+        <div class="row">
+          <div class="col-sm-3">
+            <div class="scrollable-container">
 
-        </div>
+            </div>
+          </div>
+          <div class="col-sm-6">
+            <div id="graph-container">
+
+            </div>
+          </div>
+          <div class="col-sm-3">
             <div class="form-container">
-            <h2>Bitcoin Transaction Search</h2>
-            <form action="" method="post">
+              <h2>Bitcoin Transaction Search</h2>
+              <form action="" method="post">
                 <label for="input-address">Input Address:</label>
                 <input type="text" name="input-address" id="input-address" placeholder="Enter input address">
                 <label for="output-address">Output Address:</label>
                 <input type="text" name="output-address" id="output-address" placeholder="Enter output address">
                 <input type="submit" value="Search">
-            </form>
-            
-            <form action="" method="post">
-              <label for="transaction-count">Transaction Count:</label>
-              <input type="number" name="transaction-count" id="transaction-count" placeholder="Enter transaction count">
-              <input type="submit" value="Search">
-            </form>
-        </div>
-    
-      <div class="row">
-        <div class="col-md-6">
-          <div class="scrollable-container">
-            <!-- <div class="card"></div> -->
+              </form>
+
+              <form action="" method="post">
+                <label for="transaction-count">Transaction Count:</label>
+                <input type="number" name="transaction-count" id="transaction-count" placeholder="Enter transaction count">
+                <input type="submit" value="Search">
+              </form>
+            </div>
           </div>
+
         </div>
-      </div>
     </div>
 
 
@@ -50,16 +54,16 @@
           INNER JOIN outputs b ON a.transaction_hash = b.transaction_hash WHERE a.recipient = ?";
           $stmt = $conn->prepare($query);
         $stmt->execute(array($inputAddress));
-      } 
-      elseif (!empty($outputAddress)) 
+      }
+      elseif (!empty($outputAddress))
       {
           $query = "SELECT a.block_id, a.transaction_hash, a.time, a.value_usd, a.recipient as sender, b.recipient as receiver FROM inputs a
           INNER JOIN outputs b ON a.transaction_hash = b.transaction_hash WHERE a.recipient = ?";
         $stmt = $conn->prepare($query);
         $stmt->execute(array($outputAddress));
-      } 
-      
-      else 
+      }
+
+      else
       {
           $query = "SELECT a.block_id, a.transaction_hash, a.time, a.value_usd, a.recipient as sender, b.recipient as receiver FROM inputs a
           INNER JOIN outputs b ON a.transaction_hash = b.transaction_hash LIMIT $transactioncount";
@@ -115,7 +119,7 @@
     //     .classed('scrollable-container', true);
 
 
-      
+
       function displayNodeInfo(nodeData) {
         // Удаляем предыдущие карточки, если они существуют
         const scrollableContainer = d3.select('.scrollable-container');
@@ -151,10 +155,6 @@
             .html(d => `<strong>${d.label}:</strong> ${d.value}`);
         });
       }
-
-
-
-
 
 
 

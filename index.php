@@ -12,14 +12,13 @@
     <div class="container-fluid">
         <div class="row">
           <div class="col-sm-3">
+            <h2>Transactions</h2>
             <div class="scrollable-container">
-
             </div>
           </div>
           <div class="col-sm-6">
-            <div id="graph-container">
-
-            </div>
+            <h2>Graph</h1>
+            <div id="graph-container"></div>
           </div>
           <div class="col-sm-3">
             <div class="form-container">
@@ -31,15 +30,23 @@
                 <input type="text"  value="<?php if (!empty($outputAddress)){echo $outputAddress;} ?>"  name="output-address" id="output-address" placeholder="Enter output address">
                 <label for="transaction-count">Transaction Count:</label>
                 <input type="number" value="<?php if (!empty($transactioncount)){echo $transactioncount;} ?>" name="transaction-count" id="transaction-count" placeholder="Enter transaction count">
-
+                <div>
+                <label for="input-address">Transaction period:</label>
+                  <div class="row">
+                    <div class="col-sm-6">
+                      <input type="date" name="start-date" id="start-date" placeholder="Start Date">
+                    </div>
+                    <div class="col-sm-6">
+                      <input type="date" name="end-date" id="end-date" placeholder="End Date">
+                    </div>
+                  </div>
+                </div>
                 <input type="submit" value="Search">
               </form>
             </div>
           </div>
-
         </div>
     </div>
-
 
     <?php
 
@@ -48,23 +55,20 @@
       if (!empty($inputAddress) && !empty($outputAddress)) 
       {
         $query = "SELECT a.block_id, a.transaction_hash, a.time, a.value_usd, a.recipient as sender, b.recipient as receiver FROM inputs a
-        INNER JOIN outputs b ON a.transaction_hash = b.transaction_hash WHERE a.recipient = ? AND b.recipient = ? LIMIT $transactioncount";
-        $stmt = $conn->prepare($query);
-        $stmt->execute(array($inputAddress, $outputAddress));
+        INNER JOIN outputs b ON a.transaction_hash = b.transaction_hash WHERE a.recipient LIKE '{$inputAddress}%' OR b.recipient LIKE '{$outputAddress}%'  LIMIT $transactioncount";
+        $stmt = $conn->query($query);
       } 
       elseif (!empty($inputAddress) && empty($outputAddress)) 
       {
           $query = "SELECT a.block_id, a.transaction_hash, a.time, a.value_usd, a.recipient as sender, b.recipient as receiver FROM inputs a
-          INNER JOIN outputs b ON a.transaction_hash = b.transaction_hash WHERE a.recipient = ? LIMIT $transactioncount";
-          $stmt = $conn->prepare($query);
-          $stmt->execute(array($inputAddress));
+          INNER JOIN outputs b ON a.transaction_hash = b.transaction_hash WHERE a.recipient LIKE '{$inputAddress}%' LIMIT $transactioncount";
+          $stmt = $conn->query($query);
       }
       elseif (empty($inputAddress) && !empty($outputAddress))
       {
           $query = "SELECT a.block_id, a.transaction_hash, a.time, a.value_usd, a.recipient as sender, b.recipient as receiver FROM inputs a
-          INNER JOIN outputs b ON a.transaction_hash = b.transaction_hash WHERE b.recipient = ? LIMIT $transactioncount";
-          $stmt = $conn->prepare($query);
-          $stmt->execute(array($outputAddress));
+          INNER JOIN outputs b ON a.transaction_hash = b.transaction_hash WHERE b.recipient LIKE '{$outputAddress}%' LIMIT $transactioncount";
+          $stmt = $conn->query($query);
       }
 
       else
@@ -95,6 +99,10 @@
 // ]
 
     var data = <?php echo $json ?>;
+    let uniqueData = Array.from(new Set(data.map(JSON.stringify))).map(JSON.parse);
+
+    data = uniqueData;
+
     const width = 100;
     const height = 100;
 
@@ -121,52 +129,65 @@
       g.attr('transform', event.transform);
     }
 
-    // // Создаем div-элемент для отображения таблицы
-    // const tableContainer = d3.select('body')
-    //     .append('div')
-    //     .attr('id', 'table-container')
-    //     .classed('scrollable-container', true);
+    function displayNodeInfo(nodeData) {
+      // Удаляем предыдущие карточки, если они существуют
+      const scrollableContainer = d3.select('.scrollable-container');
+      scrollableContainer.selectAll('.card').remove();
 
+      // Создаем карточки и заполняем их данными
+      const uniqueNodePairs = new Map();
+      nodeData.forEach(data => {
+        const nodePair = data.sender + '-' + data.receiver;
+        if (!uniqueNodePairs.has(nodePair)) {
+          uniqueNodePairs.set(nodePair, data);
+        }
+      });
 
+      uniqueNodePairs.forEach(data => {
+        const card = scrollableContainer.append('div')
+          .attr('class', 'card');
+        const cardHeader = card.append('div')
+          .attr('class', 'card-header')
+          .append('h5')
+          .text(data.transaction_hash);
+        const cardBody = card.append('div')
+          .attr('class', 'card-body');
+        const table = cardBody.append('table')
+          .attr('class', 'table');
+        const tbody = table.append('tbody');
 
-      function displayNodeInfo(nodeData) {
-        // Удаляем предыдущие карточки, если они существуют
-        const scrollableContainer = d3.select('.scrollable-container');
-        scrollableContainer.selectAll('.card').remove();
+        const rowsData = [
+          { label: 'Sender', value: data.sender },
+          { label: 'Receiver', value: data.receiver },
+          { label: 'Block ID', value: data.block_id },
+          { label: 'Time', value: data.time },
+          { label: 'Value USD', value: data.value_usd },
+        ];
 
-        // Создаем карточки и заполняем их данными
-        nodeData.forEach(data => {
-          const card = scrollableContainer.append('div')
-            .attr('class', 'card');
-          const cardHeader = card.append('div')
-            .attr('class', 'card-header')
-            .append('h5')
-            .text(data.transaction_hash);
-          const cardBody = card.append('div')
-            .attr('class', 'card-body');
-          const table = cardBody.append('table')
-            .attr('class', 'table');
-          const tbody = table.append('tbody');
+        const rows = tbody.selectAll('tr')
+          .data(rowsData)
+          .join('tr');
 
-          const rowsData = [
-            { label: 'Block ID', value: data.block_id },
-            { label: 'Time', value: data.time },
-            { label: 'Sender', value: data.sender },
-            { label: 'Receiver', value: data.receiver },
-            { label: 'Value USD', value: data.value_usd },
-          ];
+        rows.append('td')
+          .html(d => `<strong>${d.label}:</strong> ${d.value}`);
+      });
+    }
 
-          const rows = tbody.selectAll('tr')
-            .data(rowsData)
-            .join('tr');
+    function getRadius(d) {
+      const minRadius = 5;
+      const maxRadius = 10;
+      const numParticipants = d.data.length;
 
-          rows.append('td')
-            .html(d => `<strong>${d.label}:</strong> ${d.value}`);
-        });
+      if (numParticipants <= 3) {
+        return minRadius;
+      } else {
+        return Math.min(minRadius + (numParticipants - 3), maxRadius);
       }
+    }
 
-
-
+    function isLargeNode(d) {
+      return d.data.length > 3;
+    }
 
     // update the links and nodes when data changes
     function update(data) {
@@ -188,18 +209,23 @@
 
       // Обновление nodes
       const node = nodeGroup
-        .selectAll('circle')
-        .data(nodes, d => d.id)
-        .join('circle')
-          .attr('r', 5)
-          .attr('fill', '#000')
-          .on('click', d => displayNodeInfo(d.target['__data__']['data']));
+          .selectAll('circle')
+          .data(nodes, d => d.id)
+          .join('circle')
+            .attr('r', getRadius) // Используйте функцию getRadius для установки радиуса в зависимости от количества участников
+            .attr('fill', '#000')
+            .on('click', d => displayNodeInfo(d.target['__data__']['data']));
 
 
-      const simulation = d3.forceSimulation(nodes)
-        .force('link', d3.forceLink(links).id(d => d.id))
-        .force('charge', d3.forceManyBody())
-        .force('center', d3.forceCenter(width / 2, height / 2));
+
+            const simulation = d3.forceSimulation(nodes)
+  .force('link', d3.forceLink(links).id(d => d.id).distance(50))
+  .force('charge', d3.forceManyBody().strength(-100)) // изменено значение strength
+  .force('center', d3.forceCenter(width / 2, height / 2))
+  .force('collideSmall', d3.forceCollide().radius(d => isLargeNode(d) ? 0 : getRadius(d) + 2))
+  .force('collideLarge', d3.forceCollide().radius(d => isLargeNode(d) ? getRadius(d) + 5 : 0));// Добавьте силу столкновения для узлов с большим количеством участников
+
+
 
       simulation.on('tick', () => {
         link
@@ -222,6 +248,4 @@
     </script>
   </body>
 </html>
-
-
 

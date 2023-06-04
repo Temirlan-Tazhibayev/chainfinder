@@ -1,13 +1,23 @@
 <?php
-$aConfig['db'] = ['postgre', 'postgres', 'qwerty', 'localhost', '5432', 'public', 'Bitcoin'];
-$aConfig['app_log_path'] = 'D:\xampp\htdocs\Github\pathfinder\tmp\log';
+define('DB_NAME', 'Chainfinder');
+define('DB_DRIVER', 'Chainfinder');
 
+define('DB_USER', 'postgres');
+define('DB_PASSWORD', 'qwerty');
+define('DB_HOST', 'localhost');
+define('PORT', '5432');
+define('SEARCHE_PATH', 'PUBLIC');
+define('LOG_PATH', 'tmp/log/');
 
+$aConfig = array(
+    'DB_DRIVER' => DB_DRIVER,
+    'DB_NAME' => DB_NAME,
+    'DB_USER' => DB_USER,
+    'DB_PASSWORD' => DB_PASSWORD,
+    'DB_HOST' => DB_HOST,
+    'PORT' => PORT,
+    'SEARCHE_PATH' => SEARCHE_PATH,
+    'LOG_PATH' => WWW_PATH . '/' . LOG_PATH,
+);
 
-try {
-    $conn = new \PDO('pgsql:host=' . $aConfig['db'][3] . ';port=' . $aConfig['db'][4] . ';dbname=' . $aConfig['db'][6], $aConfig['db'][1], $aConfig['db'][2], array(\PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION));
-    $conn->query('SET search_path TO ' . $aConfig['db'][5]);
-}
-catch (\Exception $oE) {
-    \system\Logger::log($oE);
-}
+?>

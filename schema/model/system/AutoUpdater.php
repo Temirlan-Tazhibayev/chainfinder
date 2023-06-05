@@ -22,7 +22,6 @@ class AutoUpdater
                 require_once $sFilePath;
 
                 $o = new $sFile();
-                echo "Hi";
                 try {
                     fopen(WWW_PATH . '/schema/model/system/updates_executed/' . $sFile, "w");
                     $o->execute();
@@ -51,9 +50,27 @@ class AutoUpdater
                     $fileHandle = fopen($inputFilePath, 'r');
                     if ($fileHandle) {
                         $sql = "INSERT INTO inputs 
-                        (block_id, transaction_hash, index, time, value, value_usd, recipient, type, script_hex, 
-                        is_from_coinbase, is_spendable, spending_block_id, spending_transaction_hash, spending_index, spending_time, 
-                        spending_value_usd, spending_sequence, spending_signature_hex, spending_witness, lifespan, cdd) 
+                        (block_id,
+                        transaction_hash,
+                        index,
+                        time,
+                        value,
+                        value_usd,
+                        recipient,
+                        type,
+                        script_hex,
+                        is_from_coinbase,
+                        is_spendable,
+                        spending_block_id,
+                        spending_transaction_hash,
+                        spending_index,
+                        spending_time,
+                        spending_value_usd,
+                        spending_sequence,
+                        spending_signature_hex,
+                        spending_witness,
+                        lifespan,
+                        cdd) 
                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
                         $shouldSkipRow = true;
@@ -64,11 +81,13 @@ class AutoUpdater
                                 $shouldSkipRow = false;
                                 continue;
                             }
-
-                            $variables = explode("\t", trim($row));
-                            echo $variables[0] . '<br>';
-
-                            $this->conn->add($sql)->execute($variables);
+                        try {
+                        $variables = explode("\t", trim($row));
+                        
+                        $this->conn->add($sql)->execute($variables);
+                        } catch (Exception $e) { 
+                            print_r($variables);
+                        }
 
                         }
 
@@ -101,8 +120,8 @@ class AutoUpdater
                                 continue;
                             }
 
-                            $variables = explode("\t", trim($row));
-                            $this->conn->add($sql)->execute($variables);
+                        $variables = explode("\t", trim($row));
+                        $this->conn->add($sql)->execute($variables);
                     }
 
                         fclose($fileHandle);

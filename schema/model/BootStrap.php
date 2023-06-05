@@ -13,7 +13,6 @@ class BootStrap
             $oAutoUpdater = new \schema\model\system\AutoUpdater();
             $oAutoUpdater->update();
             $oAutoUpdater->executeTsvFiles();
-            // $oAutoUpdater->ex();
             
             // echo \schema\model\Registry::get('cfg')["LOG_PATH"];
             

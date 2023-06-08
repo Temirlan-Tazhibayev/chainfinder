@@ -3,7 +3,7 @@ define('DB_NAME', 'Chainfinder');
 define('DB_DRIVER', 'Chainfinder');
 
 define('DB_USER', 'postgres');
-define('DB_PASSWORD', 'qwerty');
+define('DB_PASSWORD', 'postgres'); //put your Database password here
 define('DB_HOST', 'localhost');
 define('PORT', '5432');
 define('SEARCHE_PATH', 'PUBLIC');

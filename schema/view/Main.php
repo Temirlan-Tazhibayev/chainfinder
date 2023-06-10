@@ -158,103 +158,6 @@ $json = json_encode($data);
             
     }
     
-    function getUniqueTransactions(nodeId, nodeData) {
-
-        const uniqueTransactions = new Map();
-
-        let blockId = null;
-        let time = null;
-        let transactionFlag = null;
-        let senderWallets = [];
-        let receiverWallets = [];
-        let totalBitcoins = 0;
-        let totalUsd = 0;
-
-        function getUniqueWallets(walletsArray) {
-            const uniqueData = new Map();
-            walletsArray.forEach(({wallet, value, value_usd}) => {
-                const walletKey = `${wallet}-${value}-${value_usd}`;
-                if (!uniqueData.has(walletKey)) {
-                    uniqueData.set(walletKey, {wallet, value, value_usd});
-                }
-            });
-            return Array.from(uniqueData.values());
-        }
-
-        function getNodeOperations(wallets){
-
-            // Filter the wallets that match the node ID
-            let nodeOperations = wallets.filter(wallet => wallet.wallet === nodeId);
-
-            // Map over the filtered wallets and return an object of value and value_usd
-            return nodeOperations.map(wallet => {
-                return { 
-                    value: wallet.value, 
-                    value_usd: wallet.value_usd 
-                };
-            });
-        }
-
-        // Helper function for calculateTotal()  to sum up all values of each wallet
-        function calculateSum(wallets, property) {
-            return wallets.reduce((sum, wallet) => sum + Number(wallet[property]), 0);
-        }
-        
-        // We compare totals of inputs and outputs in case one of them is incomplete
-        function calculateTotal(senderWallets, receiverWallets, property) {
-            const senderSum = calculateSum(senderWallets, property);
-            const receiverSum = calculateSum(receiverWallets, property);
-            if (property == 'value'){
-                return (Math.max(senderSum, receiverSum) / 100000000).toString();
-            }else if (property == 'value_usd'){
-                return Math.max(senderSum, receiverSum).toFixed(2);
-            }
-        }
-
-        // As internal function, it has access to variables of outer function
-        function processTransaction() {
-            if (senderWallets.length > 0 && receiverWallets.length > 0) {
-                senderWallets = getUniqueWallets(senderWallets);
-                receiverWallets = getUniqueWallets(receiverWallets);
-                nodeInputs = getNodeOperations(senderWallets);
-                nodeOutputs = getNodeOperations(receiverWallets);
-                totalBitcoins = calculateTotal(senderWallets, receiverWallets, 'value');
-                totalUsd = calculateTotal(senderWallets, receiverWallets, 'value_usd');
-
-                const transactionInfo = {
-                    transactionHash: transactionFlag,
-                    totalBitcoins: totalBitcoins,
-                    totalUsd: totalUsd,
-                    sendersNumber: senderWallets.length,
-                    receiversNumber: receiverWallets.length,
-                    blockId: blockId,
-                    time: time,
-                };
-                uniqueTransactions.set(transactionFlag, {senderWallets, receiverWallets, nodeInputs, nodeOutputs, transactionInfo});
-            }
-        }
-
-        
-        nodeData.forEach(data => {
-            blockId = data.block_id;
-            time = data.time;
-            if (data.transaction_hash != transactionFlag) {
-                processTransaction();
-                
-                transactionFlag = data.transaction_hash;
-                senderWallets = [{ wallet: data.sender, value: data.sent_value, value_usd: data.sent_usd}];
-                receiverWallets = [{ wallet: data.receiver, value: data.received_value, value_usd: data.received_usd}];
-            }else{
-                senderWallets.push({ wallet: data.sender, value: data.sent_value, value_usd: data.sent_usd})
-                receiverWallets.push({ wallet: data.receiver, value: data.received_value, value_usd: data.received_usd})
-
-            }
-        });
-
-        processTransaction();
-        return uniqueTransactions;
-    }
-    
     // Create Card with Header and Body
     function createCard(transactionHash, allData) {
         const scrollableContainer = d3.select('.scrollable-container');
@@ -375,22 +278,121 @@ $json = json_encode($data);
     
     
     // Main function that displays data on the left window
-    function displayNodeInfo(nodeId, nodeData) {
+    function displayNodeInfo(nodeId, uniqueTransactions) {
         removePreviousData();
-        const transactionCount = (function(arr) {
-          const distinctNames = new Set(arr.map(obj => obj.transaction_hash));
-          return distinctNames.size;
-        })(nodeData);
+        const transactionCount = uniqueTransactions.size;
 
         createHeader(nodeId, transactionCount);
-    
-        const uniqueTransactions = getUniqueTransactions(nodeId, nodeData);
     
         uniqueTransactions.forEach((allData, transactionHash) => {
             createCard(transactionHash, allData);
         });
     }
 /* *********************************************************************************************************************************************************************************** */
+
+    function getUniqueTransactions(nodeId, nodeData) {
+        
+        const involvedTransactions = nodeData.filter((transaction) => 
+            transaction.sender === nodeId || transaction.receiver === nodeId
+        ).map((transaction) => 
+            transaction.transaction_hash
+        );
+        const uniqueTransactions = new Map();
+
+        let blockId = null;
+        let time = null;
+        let transactionFlag = null;
+        let senderWallets = [];
+        let receiverWallets = [];
+        let totalBitcoins = 0;
+        let totalUsd = 0;
+
+        function getUniqueWallets(walletsArray) {
+            const uniqueData = new Map();
+            walletsArray.forEach(({wallet, value, value_usd}) => {
+                const walletKey = `${wallet}-${value}-${value_usd}`;
+                if (!uniqueData.has(walletKey)) {
+                    uniqueData.set(walletKey, {wallet, value, value_usd});
+                }
+            });
+            return Array.from(uniqueData.values());
+        }
+
+        function getNodeOperations(wallets){
+        
+            // Filter the wallets that match the node ID
+            let nodeOperations = wallets.filter(wallet => wallet.wallet === nodeId);
+        
+            // Map over the filtered wallets and return an object of value and value_usd
+            return nodeOperations.map(wallet => {
+                return { 
+                    value: wallet.value, 
+                    value_usd: wallet.value_usd 
+                };
+            });
+        }
+
+        // Helper function for calculateTotal()  to sum up all values of each wallet
+        function calculateSum(wallets, property) {
+            return wallets.reduce((sum, wallet) => sum + Number(wallet[property]), 0);
+        }
+
+        // We compare totals of inputs and outputs in case one of them is incomplete
+        function calculateTotal(senderWallets, receiverWallets, property) {
+            const senderSum = calculateSum(senderWallets, property);
+            const receiverSum = calculateSum(receiverWallets, property);
+            if (property == 'value'){
+                return (Math.max(senderSum, receiverSum) / 100000000);
+            }else if (property == 'value_usd'){
+                return parseFloat(Math.max(senderSum, receiverSum).toFixed(2));
+            }
+        }
+
+        // As internal function, it has access to variables of outer function
+        function processTransaction() {
+            if (senderWallets.length > 0 && receiverWallets.length > 0) {
+                senderWallets = getUniqueWallets(senderWallets);
+                receiverWallets = getUniqueWallets(receiverWallets);
+                nodeInputs = getNodeOperations(senderWallets);
+                nodeOutputs = getNodeOperations(receiverWallets);
+                totalBitcoins = calculateTotal(senderWallets, receiverWallets, 'value');
+                totalUsd = calculateTotal(senderWallets, receiverWallets, 'value_usd');
+            
+                const transactionInfo = {
+                    transactionHash: transactionFlag,
+                    totalBitcoins: totalBitcoins,
+                    totalUsd: totalUsd,
+                    sendersNumber: senderWallets.length,
+                    receiversNumber: receiverWallets.length,
+                    blockId: blockId,
+                    time: time,
+                };
+                uniqueTransactions.set(transactionFlag, {senderWallets, receiverWallets, nodeInputs, nodeOutputs, transactionInfo});
+            }
+        }
+
+
+        nodeData.forEach(data => {
+            if (involvedTransactions.includes(data.transaction_hash)){
+                blockId = data.block_id;
+                time = data.time;
+                if (data.transaction_hash != transactionFlag) {
+                    processTransaction();
+
+                    transactionFlag = data.transaction_hash;
+                    senderWallets = [{ wallet: data.sender, value: data.sent_value, value_usd: data.sent_usd}];
+                    receiverWallets = [{ wallet: data.receiver, value: data.received_value, value_usd: data.received_usd}];
+                }else{
+                    senderWallets.push({ wallet: data.sender, value: data.sent_value, value_usd: data.sent_usd})
+                    receiverWallets.push({ wallet: data.receiver, value: data.received_value, value_usd: data.received_usd})
+                
+                }
+            }
+        });
+
+        processTransaction();
+        return uniqueTransactions;
+    }
 
 
     function getRadius(d) {
@@ -409,39 +411,39 @@ $json = json_encode($data);
       return d.data.length > 3;
     }
 
-    function getTransactionsByWallet(transactions, wallet) {
-        // Find all the transaction hashes where the wallet is involved
-        const involvedTransactions = transactions.filter((transaction) => 
-            transaction.sender === wallet || transaction.receiver === wallet
-        ).map((transaction) => 
-            transaction.transaction_hash
-        );
+    // function getTransactionsByWallet(transactions, wallet) {
+    //     // Find all the transaction hashes where the wallet is involved
+    //     const involvedTransactions = transactions.filter((transaction) => 
+    //         transaction.sender === wallet || transaction.receiver === wallet
+    //     ).map((transaction) => 
+    //         transaction.transaction_hash
+    //     );
         
-        // Now, return all transactions which have transaction_hash present in involvedTransactionHashes
-        return transactions.filter((transaction) => 
-            involvedTransactions.includes(transaction.transaction_hash)
-        );
-    }
+    //     // Now, return all transactions which have transaction_hash present in involvedTransactionHashes
+    //     return transactions.filter((transaction) => 
+    //         involvedTransactions.includes(transaction.transaction_hash)
+    //     );
+    // }
 
     function setColor(d){
         let nodeData = d.data;
         let nodeId = d.id;
         let isSender = false;
         let isReceiver = false;
-        
-        for (let i = 0; i < nodeData.length; i++) {
-            if (nodeData[i]["sender"] === nodeId) {
+
+        nodeData.forEach((txData, txid) => {
+            if (txData.nodeInputs.length > 0) {
                 isSender = true;
             }
-            if (nodeData[i]["receiver"] === nodeId) {
+            if (txData.nodeOutputs.length > 0) {
                 isReceiver = true;
             }
-            if (isReceiver && isSender){
+        });
+        
+        if (isReceiver && isSender){
                 return '#EE82EE'; // Violet
-            }
         }
-    
-        if (isReceiver){
+        else if (isReceiver){
             return '#5AC6F2'; // SkyBlue
         }
         else if (isSender){
@@ -505,7 +507,7 @@ $json = json_encode($data);
             
         const nodes = Array.from(nodeIDs).map(id => ({
             id: id,
-            data: getTransactionsByWallet(data, id)
+            data: getUniqueTransactions(id, data)
         }));
         
 
@@ -555,7 +557,7 @@ $json = json_encode($data);
             .selectAll('circle')
             .data(nodes, d => d.id)
             .join('circle')
-                .attr('r', getRadius)
+                .attr('r', 8)
                 .attr('fill', setColor)
 
         node.on('click', function(event, d) { 
@@ -604,8 +606,8 @@ $json = json_encode($data);
             .force('link', d3.forceLink(links).id(d => d.id).distance(50))
             .force('charge', d3.forceManyBody().strength(-100)) // изменено значение strength
             .force('center', d3.forceCenter(width / 2, height / 2))
-            .force('collideSmall', d3.forceCollide().radius(d => isLargeNode(d) ? 0 : getRadius(d) + 2))
-            .force('collideLarge', d3.forceCollide().radius(d => isLargeNode(d) ? getRadius(d) + 5 : 0));// Добавьте силу столкновения для узлов с большим количеством участников
+            .force('collideSmall', d3.forceCollide().radius(8))
+            .force('collideLarge', d3.forceCollide().radius(8));// Добавьте силу столкновения для узлов с большим количеством участников
 
 
 

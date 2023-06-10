@@ -259,13 +259,16 @@ $json = json_encode($data);
     function createCard(transactionHash, allData) {
         const scrollableContainer = d3.select('.scrollable-container');
         const card = scrollableContainer.append('div').attr('class', 'card');
+        // put public keys (addresses) of all wallets into one array
+        let wallets = allData.receiverWallets.map(obj => obj.wallet);
+        wallets.push(...allData.senderWallets.map(obj => obj.wallet));
 
-        addCardHeader(card, transactionHash);
+        addCardHeader(card, transactionHash, wallets);
         addCardBody(card, allData);
     }
 
     // Add Card Header
-    function addCardHeader(card, transactionHash) {
+    function addCardHeader(card, transactionHash, wallets) {
         let cardHeader = card.append('div')
                     .attr('class', 'card-header');
 
@@ -279,7 +282,7 @@ $json = json_encode($data);
         cardHeader.append("p")
                   .text("show")
                   .on("click", function() {
-                      highlightNode(transactionHash, "transaction");
+                      highlightNode(wallets, "transaction");
                   });
     }
 
@@ -466,12 +469,12 @@ $json = json_encode($data);
     function highlightNode(selectedNode, type) {
         node = d3.selectAll('circle');
         node.attr('stroke', "none");
-        console.log(node.nodes());
+
         let nodeObjects = null;
-        if (type = 'wallet'){
+        if (type === 'wallet'){
             nodeObjects = node.filter((d) => d.id === selectedNode);
-        }else if (type = 'transaction'){
-            nodeObjects = node.filter((d) => d.id === selectedNode);
+        }else if (type === 'transaction'){
+            nodeObjects = node.filter((d) => selectedNode.includes(d.id));
         }
 
         if (nodeObjects != null){

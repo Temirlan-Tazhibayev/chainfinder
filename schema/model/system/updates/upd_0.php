@@ -15,7 +15,7 @@ class upd_0 extends schema\model\system\BaseUpdate{
                 value_usd numeric,
                 recipient character varying(62), 
                 type character varying(21),
-                script_hex character varying(400),  --should be deleted after loading all data
+                script_hex character varying(2000),  --values can be turned to NULL after loading all data
                 is_from_coinbase integer,
                 is_spendable integer
             )",
@@ -29,7 +29,7 @@ class upd_0 extends schema\model\system\BaseUpdate{
                 value_usd numeric,
                 recipient character varying(62),
                 type character varying(21),
-                script_hex character varying(1000),  --should be deleted after loading all data
+                script_hex character varying(2000),  --svalues can be turned to NULL after loading all data
                 is_from_coinbase integer,
                 is_spendable integer,
                 spending_block_id bigint,
@@ -38,8 +38,8 @@ class upd_0 extends schema\model\system\BaseUpdate{
                 spending_time time without time zone,
                 spending_value_usd numeric,
                 spending_sequence bigint,
-                spending_signature_hex character varying(1200),   --should be deleted after loading all data
-                spending_witness TEXT,   --should be deleted after loading all data
+                spending_signature_hex character varying(2000),   --values can be turned to NULL after loading all data
+                spending_witness TEXT,   --values can be turned to NULL after loading all data
                 lifespan bigint,
                 cdd numeric
             )",

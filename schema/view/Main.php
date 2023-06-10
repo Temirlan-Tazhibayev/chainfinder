@@ -161,11 +161,11 @@ $json = json_encode($data);
 
         scrollableContainer.append('div').attr('class', 'header').style('word-break', 'break-word')
             .append('h5')
-            .text(`Sent: ${nodeData.totalSent.value/100000000} BTC | ${nodeData.totalSent.value_usd} USD`)
+            .text(`Sent: ${nodeData.totalSent.value/100000000} BTC | ${nodeData.totalSent.valueUsd.toFixed(2)} USD`)
 
         scrollableContainer.append('div').attr('class', 'header').style('word-break', 'break-word')
             .append('h5')
-            .text(`Received: ${nodeData.totalReceived.value/100000000} BTC | ${nodeData.totalReceived.value_usd} USD`)
+            .text(`Received: ${nodeData.totalReceived.value/100000000} BTC | ${nodeData.totalReceived.valueUsd.toFixed(2)} USD`)
             
     }
     
@@ -269,7 +269,7 @@ $json = json_encode($data);
                     .attr("class", "text-success")
                     .text(d.wallet);
                 item.append("br");
-                item.append("strong").text(`Bitcoin: ${d.value/100000000}, USD: ${Number(d.value_usd).toFixed(2)}`);
+                item.append("strong").text(`Bitcoin: ${d.value/100000000}, USD: ${Number(d.valueUsd).toFixed(2)}`);
                 item.append("p")
                     .text("show")
                     .on("click", function() {
@@ -277,7 +277,7 @@ $json = json_encode($data);
                     });
             } else {
                 item.append("hr").attr("class", "dashed");
-                item.append("strong").text(`Bitcoin: ${d.value/100000000}, USD: ${Number(d.value_usd).toFixed(2)}`);
+                item.append("strong").text(`Bitcoin: ${d.value/100000000}, USD: ${Number(d.valueUsd).toFixed(2)}`);
             }
         });
         
@@ -319,10 +319,10 @@ $json = json_encode($data);
 
         function getUniqueWallets(walletsArray) {
             const uniqueData = new Map();
-            walletsArray.forEach(({wallet, value, value_usd}) => {
-                const walletKey = `${wallet}-${value}-${value_usd}`;
+            walletsArray.forEach(({wallet, value, valueUsd}) => {
+                const walletKey = `${wallet}-${value}-${valueUsd}`;
                 if (!uniqueData.has(walletKey)) {
-                    uniqueData.set(walletKey, {wallet, value, value_usd});
+                    uniqueData.set(walletKey, {wallet, value, valueUsd});
                 }
             });
             return Array.from(uniqueData.values());
@@ -333,11 +333,11 @@ $json = json_encode($data);
             // Filter the wallets that match the node ID
             let nodeOperations = wallets.filter(wallet => wallet.wallet === nodeId);
         
-            // Map over the filtered wallets and return an object of value and value_usd
+            // Map over the filtered wallets and return an object of value and valueUsd
             return nodeOperations.map(wallet => {
                 return { 
                     value: wallet.value, 
-                    value_usd: parseFloat(wallet.value_usd)
+                    valueUsd: parseFloat(wallet.valueUsd)
                 };
             });
         }
@@ -353,7 +353,7 @@ $json = json_encode($data);
             const receiverSum = calculateSum(receiverWallets, property);
             if (property == 'value'){
                 return (Math.max(senderSum, receiverSum) / 100000000);
-            }else if (property == 'value_usd'){
+            }else if (property == 'valueUsd'){
                 return parseFloat(Math.max(senderSum, receiverSum).toFixed(2));
             }
         }
@@ -366,7 +366,7 @@ $json = json_encode($data);
                 nodeInputs = getNodeOperations(senderWallets);
                 nodeOutputs = getNodeOperations(receiverWallets);
                 totalBitcoins = calculateTotal(senderWallets, receiverWallets, 'value');
-                totalUsd = calculateTotal(senderWallets, receiverWallets, 'value_usd');
+                totalUsd = calculateTotal(senderWallets, receiverWallets, 'valueUsd');
             
                 const transactionInfo = {
                     transactionHash: transactionFlag,
@@ -390,11 +390,11 @@ $json = json_encode($data);
                     processTransaction();
 
                     transactionFlag = transaction.transaction_hash;
-                    senderWallets = [{ wallet: transaction.sender, value: transaction.sent_value, value_usd: transaction.sent_usd}];
-                    receiverWallets = [{ wallet: transaction.receiver, value: transaction.received_value, value_usd: transaction.received_usd}];
+                    senderWallets = [{ wallet: transaction.sender, value: transaction.sent_value, valueUsd: transaction.sent_usd}];
+                    receiverWallets = [{ wallet: transaction.receiver, value: transaction.received_value, valueUsd: transaction.received_usd}];
                 }else{
-                    senderWallets.push({ wallet: transaction.sender, value: transaction.sent_value, value_usd: transaction.sent_usd})
-                    receiverWallets.push({ wallet: transaction.receiver, value: transaction.received_value, value_usd: transaction.received_usd})
+                    senderWallets.push({ wallet: transaction.sender, value: transaction.sent_value, valueUsd: transaction.sent_usd})
+                    receiverWallets.push({ wallet: transaction.receiver, value: transaction.received_value, valueUsd: transaction.received_usd})
                 
                 }
             }
@@ -405,20 +405,24 @@ $json = json_encode($data);
     }
 
 
-    function getRadius(d) {
-      const minRadius = 5;
-      const maxRadius = 12;
-      const numParticipants = d.data.length;
+    function getRadius(nodeData) {
+      totalSentUsd = nodeData.totalSent.valueUsd;
+      totalReceivedUsd = nodeData.totalReceived.valueUsd;
+      const difference = Math.abs(totalSentUsd - totalReceivedUsd);
 
-      if (numParticipants <= 3) {
-        return minRadius;
-      } else {
-        return Math.min(minRadius + (numParticipants - 3), maxRadius);
+      if (difference <= 100) {
+        return 4;
+      } else if (difference <= 1000) {
+        return 7;
+      }else if (difference <= 10000) {
+        return 9;
+      }else if (difference <= 100000) {
+        return 11;
+      }else if (difference <= 500000) {
+        return 13;
+      }else{
+        return 15;
       }
-    }
-
-    function isLargeNode(d) {
-      return d.data.length > 3;
     }
 
     // function getTransactionsByWallet(transactions, wallet) {
@@ -519,14 +523,14 @@ $json = json_encode($data);
         function getTotalSum(totalSum, operations){
             for (i = 0; i < operations.length; i++){
                 totalSum.value = operations[i].value;
-                totalSum.value_usd = operations[i].value_usd;
+                totalSum.valueUsd = operations[i].valueUsd;
             }
             return totalSum;
         }
         const nodes = Array.from(nodeIDs).map(id => {
             let transactions = getUniqueTransactions(id, data);
-            let totalSent = {value: 0, value_usd: 0};
-            let totalReceived = {value: 0, value_usd: 0};
+            let totalSent = {value: 0, valueUsd: 0};
+            let totalReceived = {value: 0, valueUsd: 0};
             transactions.forEach((txData) => {
                 totalSent = getTotalSum(totalSent, txData.nodeInputs);
                 totalReceived = getTotalSum(totalReceived, txData.nodeOutputs);
@@ -586,7 +590,7 @@ $json = json_encode($data);
             .selectAll('circle')
             .data(nodes, d => d.id)
             .join('circle')
-                .attr('r', 8)
+                .attr('r', getRadius)
                 .attr('fill', setColor)
 
         node.on('click', function(event, d) { 

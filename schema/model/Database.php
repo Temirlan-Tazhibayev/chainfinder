@@ -62,14 +62,14 @@ class Database
     function validateUser($username, $password) {
 
       // Prepare the SQL statement
-      $stmt = $this->pdoConn->prepare("SELECT * FROM users WHERE username = :username");
-      $stmt->bindParam(':username', $username);
+      $statement = $this->pdoConn->prepare("SELECT * FROM users WHERE username = :username");
+      $statement->bindParam(':username', $username);
 
       // Execute the query
-      $stmt->execute();
+      $statement->execute();
       
       // Fetch the user record
-      $user = $stmt->fetch(\PDO::FETCH_ASSOC);
+      $user = $statement->fetch(\PDO::FETCH_ASSOC);
 
       // Verify the password
       if ($user && password_verify($password, $user['password'])) {

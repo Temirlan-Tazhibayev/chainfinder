@@ -493,6 +493,12 @@ $json = json_encode($data);
         // return clickedNode;
     }
 
+    function removeDuplicates(array) {
+      return array.filter((item, index) => {
+        return array.indexOf(item) === index;
+      });
+    }
+
     // update the links and nodes when data changes
     function update(data) {
         const nodeIDs = new Set(data.flatMap(d => [d.sender, d.receiver]));
@@ -502,13 +508,14 @@ $json = json_encode($data);
             data: getTransactionsByWallet(data, id)
         }));
         
-        console.log(nodes[0]);
+
         // Create links from data
-        const links = [];
+        let links = [];
         for (let i = 0; i < data.length; i++) {
             const { sender, receiver } = data[i];
             links.push({ source: sender, target: receiver });
         }
+        links = removeDuplicates(links);
 
         // For some reason, this method copies a bunch of other unnecessary data to a links list
         //const links = data.map(d => ({ source: d.sender.id, target: d.receiver.id }));

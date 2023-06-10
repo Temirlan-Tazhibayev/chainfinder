@@ -50,7 +50,7 @@ class upd_0 extends schema\model\system\BaseUpdate{
         ];
 
         foreach ($initializeQueries as $initializeQuery) {
-            $this->conn->add($initializeQuery)->execute([]);
+            $this->conn->executeQuery($initializeQuery, []);
         }
     }
 }

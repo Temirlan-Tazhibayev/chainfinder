@@ -84,7 +84,7 @@ class AutoUpdater
                         try {
                         $variables = explode("\t", trim($row));
                         
-                        $this->conn->add($sql)->execute($variables);
+                        $this->conn->executeQuery($sql, $variables);
                         } catch (Exception $e) { 
                             print_r($variables);
                         }

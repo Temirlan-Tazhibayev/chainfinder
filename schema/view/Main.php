@@ -266,14 +266,21 @@ $json = json_encode($data);
 
     // Add Card Header
     function addCardHeader(card, transactionHash) {
-        card.append('div')
-            .attr('class', 'card-header')
-            .append('h5')
-            .text("Transaction hash: ")
-            .append('a') 
-            .attr('href', `https://blockchair.com/bitcoin/transaction/${transactionHash}`) 
-            .attr('target', '_blank')
-            .text(transactionHash);
+        let cardHeader = card.append('div')
+                    .attr('class', 'card-header');
+
+        cardHeader.append('h5')
+                  .text("Transaction hash: ")
+                  .append('a') 
+                  .attr('href', `https://blockchair.com/bitcoin/transaction/${transactionHash}`) 
+                  .attr('target', '_blank')
+                  .text(transactionHash);
+
+        cardHeader.append("p")
+                  .text("show")
+                  .on("click", function() {
+                      highlightNode(transactionHash, "transaction");
+                  });
     }
 
     // Add Card Body
@@ -286,8 +293,7 @@ $json = json_encode($data);
             { label: 'Total (Bitcoin)', value:  transactionData.totalBitcoins },
             { label: 'Total (USD)', value:  transactionData.totalUsd },
             { label: 'Block ID', value: transactionData.blockId, url: `https://blockchair.com/bitcoin/block/${transactionData.blockId}` },
-            { label: 'Time', value: transactionData.time },
-            { label: 'Time', value: transactionData.time },
+            { label: 'Time', value: transactionData.time }
         ];
 
         const sendersHeader = `Total Inputs (${transactionData.sendersNumber})`;
@@ -316,25 +322,54 @@ $json = json_encode($data);
                              : `<strong>${d.label}:</strong> ${d.value}`);
     }
     
+
     function addCollapsibleList(parentElement, headerData, listData) {
-        const listGroup = parentElement.append('tr').append('td').attr('colspan', '2').style('word-break', 'break-all');
+        const listGroup = parentElement
+            .append('tr')
+            .append('td')
+            .attr('colspan', '2')
+            .style('word-break', 'break-all');
     
-        const listHeader = listGroup.append('div').text(headerData).style('cursor', 'pointer').attr('class', 'text-info');
+        const listHeader = listGroup.append('div')
+            .text(headerData)
+            .style('cursor', 'pointer')
+            .style('word-break', 'break-word')
+            .attr('class', 'text-info');
     
         const listItems = listGroup.selectAll('div.list-item')
             .data(listData)
             .join('div')
             .attr('class', 'list-item')
             .style('display', 'none')
-            .html(d => d.wallet ? `<hr class="dashed"><a href="https://blockchair.com/bitcoin/address/${d.wallet}" target="_blank" class="text-success">${d.wallet}</a> <br>
-                                    <strong>Bitcoin:</strong> ${d.value/100000000}, <strong>USD:</strong> ${Number(d.value_usd).toFixed(2)}`
-                                : `<hr class="dashed"><strong>Bitcoin:</strong> ${d.value/100000000}, <strong>USD:</strong> ${Number(d.value_usd).toFixed(2)}`);
+
+        listItems.each(function (d) {
+            const item = d3.select(this);
+            if (d.wallet) {
+                item.append("hr").attr("class", "dashed");
+                item.append("a")
+                    .attr("href", "https://blockchair.com/bitcoin/address/" + d.wallet)
+                    .attr("target", "_blank")
+                    .attr("class", "text-success")
+                    .text(d.wallet);
+                item.append("br");
+                item.append("strong").text(`Bitcoin: ${d.value/100000000}, USD: ${Number(d.value_usd).toFixed(2)}`);
+                item.append("p")
+                    .text("show")
+                    .on("click", function() {
+                        highlightNode(d.wallet, "wallet");
+                    });
+            } else {
+                item.append("hr").attr("class", "dashed");
+                item.append("strong").text(`Bitcoin: ${d.value/100000000}, USD: ${Number(d.value_usd).toFixed(2)}`);
+            }
+        });
         
         listHeader.on('click', function () {
             const displayStyle = listItems.style('display');
             listItems.style('display', displayStyle === 'none' ? 'block' : 'none');
         });
     }
+    
     
     // Main function that displays data on the left window
     function displayNodeInfo(nodeId, nodeData) {
@@ -385,60 +420,199 @@ $json = json_encode($data);
         );
     }
 
+    function setColor(d){
+        let nodeData = d.data;
+        let nodeId = d.id;
+        let isSender = false;
+        let isReceiver = false;
+        
+        for (let i = 0; i < nodeData.length; i++) {
+            if (nodeData[i]["sender"] === nodeId) {
+                isSender = true;
+            }
+            if (nodeData[i]["receiver"] === nodeId) {
+                isReceiver = true;
+            }
+            if (isReceiver && isSender){
+                return '#EE82EE'; // Violet
+            }
+        }
+    
+        if (isReceiver){
+            return '#5AC6F2'; // SkyBlue
+        }
+        else if (isSender){
+            return '#32CD32'; // LimeGreen
+        }
+        else{
+            return '#808080'; // Gray
+        }
+    }
+
+
+    function zoomToNode(nodeToFocus){
+        // Suppose `x` and `y` are the coordinates of the node to focus on
+        let x = nodeToFocus.x;
+        let y = nodeToFocus.y;
+
+        // And `zoom` is the d3.zoom object associated with your SVG element
+        let svg = d3.select('svg');
+
+        svg.transition()
+            .duration(1000) // transition duration of 1 second
+            .call(zoom.transform, d3.zoomIdentity.translate(-x, -y));
+    }
+
+    function highlightNode(selectedNode, type) {
+        node = d3.selectAll('circle');
+        node.attr('stroke', "none");
+        console.log(node.nodes());
+        let nodeObjects = null;
+        if (type = 'wallet'){
+            nodeObjects = node.filter((d) => d.id === selectedNode);
+        }else if (type = 'transaction'){
+            nodeObjects = node.filter((d) => d.id === selectedNode);
+        }
+
+        if (nodeObjects != null){
+            nodeObjects.attr('stroke', 'orange').attr('stroke-width', 3).attr('stroke-opacity', 1);
+        }else{
+            alert("Some internal error occured! The wallet you have chosen doesn't exist in the graph!");
+        }
+
+        //zoomToNode(nodeObjects);
+        //d3.select(selectedNode).attr('stroke', 'orange');
+        // If there was a previously selected node, reset its color
+        // if (selectedNode) {
+        //     d3.select(selectedNode).attr('fill', setColor);
+        // }
+        // d3.select(clickedNode).attr('fill', 'red');
+        // return clickedNode;
+    }
+
     // update the links and nodes when data changes
     function update(data) {
-      const links = data.map(d => ({ source: d.sender, target: d.receiver }));
-      const nodeIDs = new Set(data.flatMap(d => [d.sender, d.receiver]));
+        const nodeIDs = new Set(data.flatMap(d => [d.sender, d.receiver]));
+            
+        const nodes = Array.from(nodeIDs).map(id => ({
+            id: id,
+            data: getTransactionsByWallet(data, id)
+        }));
+        
+        console.log(nodes[0]);
+        // Create links from data
+        const links = [];
+        for (let i = 0; i < data.length; i++) {
+            const { sender, receiver } = data[i];
+            links.push({ source: sender, target: receiver });
+        }
 
-      const nodes = Array.from(nodeIDs).map(id => ({
-        id: id,
-        data: getTransactionsByWallet(data, id)
-      }));
-
-      // Обновление links
-      const link = linkGroup
-        .selectAll('line')
-        .data(links, d => d.source.id + '-' + d.target.id)
-        .join('line')
-          .attr('stroke', '#999')
-          .attr('stroke-opacity', 0.6)
-          .attr('stroke-width', d => Math.sqrt(d.value));
-
-
-      // Обновление nodes
-      const node = nodeGroup
-          .selectAll('circle')
-          .data(nodes, d => d.id)
-          .join('circle')
-            .attr('r', getRadius) // Используйте функцию getRadius для установки радиуса в зависимости от количества участников
-            .attr('fill', '#000')
-            .on('click', d => displayNodeInfo(d.target['__data__']['id'], d.target['__data__']['data']));
+        // For some reason, this method copies a bunch of other unnecessary data to a links list
+        //const links = data.map(d => ({ source: d.sender.id, target: d.receiver.id }));
 
 
+        // Обновление links
+        var link = linkGroup
+            .selectAll('line')
+            .data(links, d => d.source + '-' + d.target)
+            .join('line')
+            .attr('stroke', '#999')
+            .attr('opacity', 0.45)
+            .attr('stroke-width', 0.5);
 
-      const simulation = d3.forceSimulation(nodes)
-          .force('link', d3.forceLink(links).id(d => d.id).distance(50))
-          .force('charge', d3.forceManyBody().strength(-100)) // изменено значение strength
-          .force('center', d3.forceCenter(width / 2, height / 2))
-          .force('collideSmall', d3.forceCollide().radius(d => isLargeNode(d) ? 0 : getRadius(d) + 2))
-          .force('collideLarge', d3.forceCollide().radius(d => isLargeNode(d) ? getRadius(d) + 5 : 0));// Добавьте силу столкновения для узлов с большим количеством участников
+        svg.on("click", function() {
+            // Reset all nodes and links to full opacity
+            node.attr('fill-opacity', 1).attr('stroke', "none");
+            link.attr('opacity', 0.45).attr('stroke', '#999').attr('stroke-width', 0.5);
+        });
+    
+        // Create a map of neighboring nodes
+        const neighboringNodes = links.reduce((acc, link) => {
+            acc[link.source] = acc[link.source] || [];
+            acc[link.target] = acc[link.target] || [];
+        
+            acc[link.source].push(link.target);
+            acc[link.target].push(link.source);
+        
+            return acc;
+        }, {});
+    
+        // variable that contain data of chosen node
+        let selectedNode = null;
+
+        // Update nodes
+        var node = nodeGroup
+            .selectAll('circle')
+            .data(nodes, d => d.id)
+            .join('circle')
+                .attr('r', getRadius)
+                .attr('fill', setColor)
+
+        node.on('click', function(event, d) { 
+            event.stopPropagation();
+            
+            // if we choose the same node again, return attributes back to initial state
+            if (d === selectedNode) {
+                selectedNode = null;
+                node.attr('fill-opacity', 1);
+                link.attr('opacity', 0.45).attr('stroke', '#999').attr('stroke-width', 0.5);
+            } else {
+                selectedNode = d;
+            
+                // Set all nodes and links to low opacity
+                node.attr('fill-opacity', 0.15).attr('stroke', "none");
+                link.attr('opacity', 0.1).attr('stroke', '#999').attr('stroke-width', 0.5);
+            
+                // Set the clicked node, neighboring nodes, and the links between them to high opacity
+                neighboringNodes[d.id].forEach(neighborId => {
+                    node.filter(n => n.id === neighborId).attr('fill-opacity', 0.7);
+                });
+                // highlight the chosen node
+                d3.select(this).attr('fill-opacity', 1);
+
+                // get links connected to the chosen node
+                nodeLinks = link.filter(l => l.source.id === d.id || l.target.id === d.id);
+
+                // link appearance changes depending on the number of neighbouring nodes
+                if (nodeLinks.size() < 10){
+                    nodeLinks.attr('stroke-width', 1.5).attr('opacity', 1);
+                }else if (nodeLinks.size() > 80){
+                    link.attr('stroke-width', 0.2);
+                    nodeLinks.attr('opacity', 0.5);
+                }else{
+                    nodeLinks.attr('opacity', 1);
+                }
+                nodeLinks.attr('stroke', 'orange');
+            }
+        
+            displayNodeInfo(d.id, d.data);
+        });
+            
+
+            
+        const simulation = d3.forceSimulation(nodes)
+            .force('link', d3.forceLink(links).id(d => d.id).distance(50))
+            .force('charge', d3.forceManyBody().strength(-100)) // изменено значение strength
+            .force('center', d3.forceCenter(width / 2, height / 2))
+            .force('collideSmall', d3.forceCollide().radius(d => isLargeNode(d) ? 0 : getRadius(d) + 2))
+            .force('collideLarge', d3.forceCollide().radius(d => isLargeNode(d) ? getRadius(d) + 5 : 0));// Добавьте силу столкновения для узлов с большим количеством участников
 
 
 
-      simulation.on('tick', () => {
-        link
-          .attr('x1', d => d.source.x)
-          .attr('y1', d => d.source.y)
-          .attr('x2', d => d.target.x)
-          .attr('y2', d => d.target.y);
+        simulation.on('tick', () => {
+          link
+            .attr('x1', d => d.source.x)
+            .attr('y1', d => d.source.y)
+            .attr('x2', d => d.target.x)
+            .attr('y2', d => d.target.y);
 
-        node
-          .attr('cx', d => d.x)
-          .attr('cy', d => d.y);
-      });
+          node
+            .attr('cx', d => d.x)
+            .attr('cy', d => d.y);
+        });
 
-      node.append('title')
-        .text(d => d.id);
+        node.append('title')
+          .text(d => d.id);
     }
 
     update(data);

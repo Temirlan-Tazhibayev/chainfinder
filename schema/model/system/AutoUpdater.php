@@ -121,7 +121,7 @@ class AutoUpdater
                             }
 
                         $variables = explode("\t", trim($row));
-                        $this->conn->add($sql)->execute($variables);
+                        $this->conn->executeQuery($sql, $variables);
                     }
 
                         fclose($fileHandle);

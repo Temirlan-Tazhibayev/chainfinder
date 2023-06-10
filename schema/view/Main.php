@@ -2,9 +2,8 @@
 
 $json = json_encode($data);
 
-
 ?>
-<!DOCTYPE html>
+
 <html>
 <head>
 <title>Page Title</title>
@@ -66,9 +65,9 @@ $json = json_encode($data);
                         </div>
         
                         <div class="col-sm-6">
-                            <label for="transaction-count">Connections number:</label>
+                            <label for="connections-count">Connections number:</label>
                             <div class="input-group">
-                                <input class="form-control" type="number" value="<?php echo isset($_SESSION['transactionCount']) ? htmlspecialchars($_SESSION['transactionCount']) : ''; ?>" name="transaction-count" id="transaction-count" placeholder="Enter transaction count">
+                                <input class="form-control" type="number" value="<?php echo isset($_SESSION['connectionsCount']) ? htmlspecialchars($_SESSION['connectionsCount']) : ''; ?>" name="connections-count" id="connections-count" placeholder="Enter transaction count">
                             </div>
                         </div>
                     </div>
@@ -97,12 +96,22 @@ $json = json_encode($data);
                         <input class="form-control btn btn-primary" type="submit" value="Search">
                     </div>
                 </form>
+                <div class="row">
+                    <div class="col-sm-6">
+                        <button class="btn btn-primary" type="button" onclick="addRow()">Highlight on Graph</button>
+                    </div>
+                    <!-- <div class="col-sm-6">
+                        <button class="btn btn-primary" type="button" onclick="addRow()">Highlight on Graph</button>
+                    </div> -->
+                </div>
             </div>
         </div>
     </div>
 </div>
 </body>
 </html>
+
+<!-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------->
 
 <script>
     var data = <?php echo $json ?>;
@@ -143,7 +152,6 @@ $json = json_encode($data);
     }
 
     function createHeader(nodeData){
-        console.log(nodeData);
         const transactionCount = nodeData.transactions.size;
         
         const scrollableContainer = d3.select('.scrollable-container');
@@ -203,12 +211,16 @@ $json = json_encode($data);
     // Add Card Body
     function addCardBody(card, transactionData) {
         const transactionInfo = transactionData.transactionInfo;
+        const nodeInputs = transactionData.nodeInputs;
+        const nodeOutputs = transactionData.nodeOutputs;
+
+        console.log(transactionInfo);
         const table = card.append('table').attr('class', 'table table-striped');
         const tbody = table.append('tbody');
         
         const labels = [
-            { label: 'Total (Bitcoin)', value:  transactionInfo.totalBitcoins },
-            { label: 'Total (USD)', value:  transactionInfo.totalUsd },
+            { label: 'Total (Bitcoin)', value:  (transactionInfo.totalValue/100000000) },
+            { label: 'Total (USD)', value:  transactionInfo.totalValueUsd.toFixed(2) },
             { label: 'Block ID', value: transactionInfo.blockId, url: `https://blockchair.com/bitcoin/block/${transactionInfo.blockId}` },
             { label: 'Time', value: transactionInfo.time }
         ];
@@ -217,13 +229,12 @@ $json = json_encode($data);
         const receiversHeader = `Total Outputs (${transactionInfo.receiversNumber})`;
     
         addRowsToTableBody(tbody, labels);
-
         // Add transaction inputs and outputs of the node wallet only
         if (nodeInputs.length > 0){
-            addCollapsibleList(tbody, `Wallet Inputs (${nodeInputs.length})`, transactionData.nodeInputs);
+            addCollapsibleList(tbody, `Wallet Inputs (${nodeInputs.length})`, nodeInputs);
         }
         if (nodeOutputs.length > 0){
-            addCollapsibleList(tbody, `Wallet Outputs (${nodeOutputs.length})`, transactionData.nodeOutputs);
+            addCollapsibleList(tbody, `Wallet Outputs (${nodeOutputs.length})`, nodeOutputs);
         }
 
         // Add all inputs and outputs of the transaction
@@ -314,8 +325,8 @@ $json = json_encode($data);
         let transactionFlag = null;
         let senderWallets = [];
         let receiverWallets = [];
-        let totalBitcoins = 0;
-        let totalUsd = 0;
+        let totalValue = 0;
+        let totalValueUsd = 0;
 
         function getUniqueWallets(walletsArray) {
             const uniqueData = new Map();
@@ -343,18 +354,18 @@ $json = json_encode($data);
         }
 
         // Helper function for calculateTotal()  to sum up all values of each wallet
-        function calculateSum(wallets, property) {
-            return wallets.reduce((sum, wallet) => sum + Number(wallet[property]), 0);
+        function calculateSum(wallets, type) {
+            return wallets.reduce((sum, wallet) => sum + Number(wallet[type]), 0);
         }
 
         // We compare totals of inputs and outputs in case one of them is incomplete
-        function calculateTotal(senderWallets, receiverWallets, property) {
-            const senderSum = calculateSum(senderWallets, property);
-            const receiverSum = calculateSum(receiverWallets, property);
-            if (property == 'value'){
-                return (Math.max(senderSum, receiverSum) / 100000000);
-            }else if (property == 'valueUsd'){
-                return parseFloat(Math.max(senderSum, receiverSum).toFixed(2));
+        function calculateTotal(senderWallets, receiverWallets, type) {
+            const senderSum = calculateSum(senderWallets, type);
+            const receiverSum = calculateSum(receiverWallets, type);
+            if (type == 'value'){
+                return (Math.max(senderSum, receiverSum));
+            }else if (type == 'valueUsd'){
+                return parseFloat(Math.max(senderSum, receiverSum));
             }
         }
 
@@ -365,13 +376,13 @@ $json = json_encode($data);
                 receiverWallets = getUniqueWallets(receiverWallets);
                 nodeInputs = getNodeOperations(senderWallets);
                 nodeOutputs = getNodeOperations(receiverWallets);
-                totalBitcoins = calculateTotal(senderWallets, receiverWallets, 'value');
-                totalUsd = calculateTotal(senderWallets, receiverWallets, 'valueUsd');
+                totalValue = calculateTotal(senderWallets, receiverWallets, 'value');
+                totalValueUsd = calculateTotal(senderWallets, receiverWallets, 'valueUsd');
             
                 const transactionInfo = {
                     transactionHash: transactionFlag,
-                    totalBitcoins: totalBitcoins,
-                    totalUsd: totalUsd,
+                    totalValue: totalValue,
+                    totalValueUsd: totalValueUsd,
                     sendersNumber: senderWallets.length,
                     receiversNumber: receiverWallets.length,
                     blockId: blockId,
@@ -531,7 +542,6 @@ $json = json_encode($data);
                 transactions: transactions
             };
         });
-        console.log(nodes);
         
         // Create links from data
         let links = [];

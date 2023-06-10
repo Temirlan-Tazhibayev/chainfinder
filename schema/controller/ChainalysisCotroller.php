@@ -34,7 +34,7 @@ class ChainalysisCotroller extends \schema\controller\MainController
             'inputAddress' => $_POST['input-address'] ?? '',
             'outputAddress' => $_POST['output-address'] ?? '',
             'blockId' => $_POST['block-id'] ?? '',
-            'transactionCount' => $_POST['transaction-count'] ?? 300, // default value
+            'connectionsCount' => $_POST['connections-count'] ?? 300, // default value
             'startTimestamp' => $_POST['start-timestamp'] ?? '',
             'endTimestamp' => $_POST['end-timestamp'] ?? '',
         ];
@@ -123,9 +123,9 @@ class ChainalysisCotroller extends \schema\controller\MainController
             }
 
             // Add the limit to the query
-            if (isset($requestData['transactionCount'])) {
+            if (isset($requestData['connectionsCount'])) {
                 $query .= " LIMIT ?";
-                $params[] = $requestData['transactionCount'];
+                $params[] = $requestData['connectionsCount'];
             }
 
             // Execute the query with the parameters

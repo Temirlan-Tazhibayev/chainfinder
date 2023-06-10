@@ -142,32 +142,43 @@ $json = json_encode($data);
         scrollableContainer.selectAll('.card').remove();
     }
 
-    function createHeader(nodeId, txLength){
+    function createHeader(nodeData){
+        console.log(nodeData);
+        const transactionCount = nodeData.transactions.size;
+        
         const scrollableContainer = d3.select('.scrollable-container');
         scrollableContainer.append('div').attr('class', 'header').style('word-break', 'break-all')
             .append('h5')
             .text("Wallet: ")
             .append('a') 
-            .attr('href', `https://blockchair.com/bitcoin/address/${nodeId}`) 
+            .attr('href', `https://blockchair.com/bitcoin/address/${nodeData.id}`) 
             .attr('target', '_blank')
-            .text(nodeId);
+            .text(nodeData.id);
 
         scrollableContainer.append('div').attr('class', 'header').style('word-break', 'break-word')
             .append('h5')
-            .text(`Number of Transactions: ${txLength}`)
+            .text(`Number of Transactions: ${transactionCount}`)
+
+        scrollableContainer.append('div').attr('class', 'header').style('word-break', 'break-word')
+            .append('h5')
+            .text(`Sent: ${nodeData.totalSent.value/100000000} BTC | ${nodeData.totalSent.value_usd} USD`)
+
+        scrollableContainer.append('div').attr('class', 'header').style('word-break', 'break-word')
+            .append('h5')
+            .text(`Received: ${nodeData.totalReceived.value/100000000} BTC | ${nodeData.totalReceived.value_usd} USD`)
             
     }
     
     // Create Card with Header and Body
-    function createCard(transactionHash, allData) {
+    function createCard(transactionHash, transactionData) {
         const scrollableContainer = d3.select('.scrollable-container');
         const card = scrollableContainer.append('div').attr('class', 'card');
         // put public keys (addresses) of all wallets into one array
-        let wallets = allData.receiverWallets.map(obj => obj.wallet);
-        wallets.push(...allData.senderWallets.map(obj => obj.wallet));
+        let wallets = transactionData.receiverWallets.map(obj => obj.wallet);
+        wallets.push(...transactionData.senderWallets.map(obj => obj.wallet));
 
         addCardHeader(card, transactionHash, wallets);
-        addCardBody(card, allData);
+        addCardBody(card, transactionData);
     }
 
     // Add Card Header
@@ -190,34 +201,34 @@ $json = json_encode($data);
     }
 
     // Add Card Body
-    function addCardBody(card, allData) {
-        const transactionData = allData.transactionInfo;
+    function addCardBody(card, transactionData) {
+        const transactionInfo = transactionData.transactionInfo;
         const table = card.append('table').attr('class', 'table table-striped');
         const tbody = table.append('tbody');
         
         const labels = [
-            { label: 'Total (Bitcoin)', value:  transactionData.totalBitcoins },
-            { label: 'Total (USD)', value:  transactionData.totalUsd },
-            { label: 'Block ID', value: transactionData.blockId, url: `https://blockchair.com/bitcoin/block/${transactionData.blockId}` },
-            { label: 'Time', value: transactionData.time }
+            { label: 'Total (Bitcoin)', value:  transactionInfo.totalBitcoins },
+            { label: 'Total (USD)', value:  transactionInfo.totalUsd },
+            { label: 'Block ID', value: transactionInfo.blockId, url: `https://blockchair.com/bitcoin/block/${transactionInfo.blockId}` },
+            { label: 'Time', value: transactionInfo.time }
         ];
 
-        const sendersHeader = `Total Inputs (${transactionData.sendersNumber})`;
-        const receiversHeader = `Total Outputs (${transactionData.receiversNumber})`;
+        const sendersHeader = `Total Inputs (${transactionInfo.sendersNumber})`;
+        const receiversHeader = `Total Outputs (${transactionInfo.receiversNumber})`;
     
         addRowsToTableBody(tbody, labels);
 
         // Add transaction inputs and outputs of the node wallet only
         if (nodeInputs.length > 0){
-            addCollapsibleList(tbody, `Wallet Inputs (${nodeInputs.length})`, allData.nodeInputs);
+            addCollapsibleList(tbody, `Wallet Inputs (${nodeInputs.length})`, transactionData.nodeInputs);
         }
         if (nodeOutputs.length > 0){
-            addCollapsibleList(tbody, `Wallet Outputs (${nodeOutputs.length})`, allData.nodeOutputs);
+            addCollapsibleList(tbody, `Wallet Outputs (${nodeOutputs.length})`, transactionData.nodeOutputs);
         }
 
         // Add all inputs and outputs of the transaction
-        addCollapsibleList(tbody, sendersHeader, allData.senderWallets);
-        addCollapsibleList(tbody, receiversHeader, allData.receiverWallets);
+        addCollapsibleList(tbody, sendersHeader, transactionData.senderWallets);
+        addCollapsibleList(tbody, receiversHeader, transactionData.receiverWallets);
     }
     
     function addRowsToTableBody(tbody, labels) {
@@ -278,21 +289,20 @@ $json = json_encode($data);
     
     
     // Main function that displays data on the left window
-    function displayNodeInfo(nodeId, uniqueTransactions) {
+    function displayNodeInfo(nodeData) {
         removePreviousData();
-        const transactionCount = uniqueTransactions.size;
-
-        createHeader(nodeId, transactionCount);
     
-        uniqueTransactions.forEach((allData, transactionHash) => {
-            createCard(transactionHash, allData);
+        createHeader(nodeData);
+    
+        nodeData.transactions.forEach((transactionData, transactionHash) => {
+            createCard(transactionHash, transactionData);
         });
     }
 /* *********************************************************************************************************************************************************************************** */
 
-    function getUniqueTransactions(nodeId, nodeData) {
+    function getUniqueTransactions(nodeId, data) {
         
-        const involvedTransactions = nodeData.filter((transaction) => 
+        const involvedTransactions = data.filter((transaction) => 
             transaction.sender === nodeId || transaction.receiver === nodeId
         ).map((transaction) => 
             transaction.transaction_hash
@@ -327,7 +337,7 @@ $json = json_encode($data);
             return nodeOperations.map(wallet => {
                 return { 
                     value: wallet.value, 
-                    value_usd: wallet.value_usd 
+                    value_usd: parseFloat(wallet.value_usd)
                 };
             });
         }
@@ -372,19 +382,19 @@ $json = json_encode($data);
         }
 
 
-        nodeData.forEach(data => {
-            if (involvedTransactions.includes(data.transaction_hash)){
-                blockId = data.block_id;
-                time = data.time;
-                if (data.transaction_hash != transactionFlag) {
+        data.forEach(transaction => {
+            if (involvedTransactions.includes(transaction.transaction_hash)){
+                blockId = transaction.block_id;
+                time = transaction.time;
+                if (transaction.transaction_hash != transactionFlag) {
                     processTransaction();
 
-                    transactionFlag = data.transaction_hash;
-                    senderWallets = [{ wallet: data.sender, value: data.sent_value, value_usd: data.sent_usd}];
-                    receiverWallets = [{ wallet: data.receiver, value: data.received_value, value_usd: data.received_usd}];
+                    transactionFlag = transaction.transaction_hash;
+                    senderWallets = [{ wallet: transaction.sender, value: transaction.sent_value, value_usd: transaction.sent_usd}];
+                    receiverWallets = [{ wallet: transaction.receiver, value: transaction.received_value, value_usd: transaction.received_usd}];
                 }else{
-                    senderWallets.push({ wallet: data.sender, value: data.sent_value, value_usd: data.sent_usd})
-                    receiverWallets.push({ wallet: data.receiver, value: data.received_value, value_usd: data.received_usd})
+                    senderWallets.push({ wallet: transaction.sender, value: transaction.sent_value, value_usd: transaction.sent_usd})
+                    receiverWallets.push({ wallet: transaction.receiver, value: transaction.received_value, value_usd: transaction.received_usd})
                 
                 }
             }
@@ -426,7 +436,7 @@ $json = json_encode($data);
     // }
 
     function setColor(d){
-        let nodeData = d.data;
+        let nodeData = d.transactions;
         let nodeId = d.id;
         let isSender = false;
         let isReceiver = false;
@@ -504,13 +514,32 @@ $json = json_encode($data);
     // update the links and nodes when data changes
     function update(data) {
         const nodeIDs = new Set(data.flatMap(d => [d.sender, d.receiver]));
-            
-        const nodes = Array.from(nodeIDs).map(id => ({
-            id: id,
-            data: getUniqueTransactions(id, data)
-        }));
-        
 
+        // helper function
+        function getTotalSum(totalSum, operations){
+            for (i = 0; i < operations.length; i++){
+                totalSum.value = operations[i].value;
+                totalSum.value_usd = operations[i].value_usd;
+            }
+            return totalSum;
+        }
+        const nodes = Array.from(nodeIDs).map(id => {
+            let transactions = getUniqueTransactions(id, data);
+            let totalSent = {value: 0, value_usd: 0};
+            let totalReceived = {value: 0, value_usd: 0};
+            transactions.forEach((txData) => {
+                totalSent = getTotalSum(totalSent, txData.nodeInputs);
+                totalReceived = getTotalSum(totalReceived, txData.nodeOutputs);
+            });
+            return {
+                id: id,
+                totalSent: totalSent,
+                totalReceived: totalReceived,
+                transactions: transactions
+            };
+        });
+        console.log(nodes);
+        
         // Create links from data
         let links = [];
         for (let i = 0; i < data.length; i++) {
@@ -597,7 +626,7 @@ $json = json_encode($data);
                 nodeLinks.attr('stroke', 'orange');
             }
         
-            displayNodeInfo(d.id, d.data);
+            displayNodeInfo(d);
         });
             
 

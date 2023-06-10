@@ -439,28 +439,17 @@ $json = json_encode($data);
     //     );
     // }
 
-    function setColor(d){
-        let nodeData = d.transactions;
-        let nodeId = d.id;
-        let isSender = false;
-        let isReceiver = false;
+    function setColor(nodeData){
+        let totalSent = nodeData.totalSent.value;
+        let totalReceived = nodeData.totalReceived.value;
 
-        nodeData.forEach((txData, txid) => {
-            if (txData.nodeInputs.length > 0) {
-                isSender = true;
-            }
-            if (txData.nodeOutputs.length > 0) {
-                isReceiver = true;
-            }
-        });
-        
-        if (isReceiver && isSender){
+        if (totalSent > 0 && totalReceived > 0){
                 return '#EE82EE'; // Violet
         }
-        else if (isReceiver){
+        else if (totalReceived > 0){
             return '#5AC6F2'; // SkyBlue
         }
-        else if (isSender){
+        else if (totalSent > 0 ){
             return '#32CD32'; // LimeGreen
         }
         else{
@@ -469,18 +458,18 @@ $json = json_encode($data);
     }
 
 
-    function zoomToNode(nodeToFocus){
-        // Suppose `x` and `y` are the coordinates of the node to focus on
-        let x = nodeToFocus.x;
-        let y = nodeToFocus.y;
+    // function zoomToNode(nodeToFocus){
+    //     // Suppose `x` and `y` are the coordinates of the node to focus on
+    //     let x = nodeToFocus.x;
+    //     let y = nodeToFocus.y;
 
-        // And `zoom` is the d3.zoom object associated with your SVG element
-        let svg = d3.select('svg');
+    //     // And `zoom` is the d3.zoom object associated with your SVG element
+    //     let svg = d3.select('svg');
 
-        svg.transition()
-            .duration(1000) // transition duration of 1 second
-            .call(zoom.transform, d3.zoomIdentity.translate(-x, -y));
-    }
+    //     svg.transition()
+    //         .duration(1000) // transition duration of 1 second
+    //         .call(zoom.transform, d3.zoomIdentity.translate(-x, -y));
+    // }
 
     function highlightNode(selectedNode, type) {
         node = d3.selectAll('circle');
@@ -637,10 +626,9 @@ $json = json_encode($data);
             
         const simulation = d3.forceSimulation(nodes)
             .force('link', d3.forceLink(links).id(d => d.id).distance(50))
-            .force('charge', d3.forceManyBody().strength(-100)) // изменено значение strength
+            .force('charge', d3.forceManyBody().strength(-50)) // изменено значение strength
             .force('center', d3.forceCenter(width / 2, height / 2))
-            .force('collideSmall', d3.forceCollide().radius(8))
-            .force('collideLarge', d3.forceCollide().radius(8));// Добавьте силу столкновения для узлов с большим количеством участников
+            .force('collide', d3.forceCollide().radius(d => getRadius(d))); // Use the node's radius for collision detection
 
 
 

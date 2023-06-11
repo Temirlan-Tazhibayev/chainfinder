@@ -17,7 +17,7 @@ class BootStrap
             // echo \schema\model\Registry::get('cfg')["LOG_PATH"];
             
             session_start();
-            $oController = new \schema\controller\ChainalysisCotroller();
+            $oController = new \schema\controller\NetworkController();
             $oController->handleRequest();
 
 

@@ -98,10 +98,13 @@ $json = json_encode($data);
                 </form>
                 <div class="row">
                     <div class="col-sm-6">
-                        <button class="btn btn-primary" type="button" onclick="addRow()">Highlight on Graph</button>
+                        <button class="btn btn-primary" type="button" onclick="highlightSearch()">Highlight on Graph</button>
+                    </div>
+                    <div class="col-sm-6">
+                        <button class="btn btn-primary" type="button" onclick="expandSearch()">Expand node</button>
                     </div>
                     <!-- <div class="col-sm-6">
-                        <button class="btn btn-primary" type="button" onclick="addRow()">Highlight on Graph</button>
+                        <button class="btn btn-primary" type="button" onclick="">Highlight on Graph</button>
                     </div> -->
                 </div>
             </div>
@@ -115,6 +118,11 @@ $json = json_encode($data);
 
 <script>
     var data = <?php echo $json ?>;
+    var nodes;
+    var links;
+    var nodeIDs = [];
+    // variable that contain data of chosen node
+    var selectedNode = null;
     data = Array.from(new Set(data.map(JSON.stringify))).map(JSON.parse);
     const width = 100;
     const height = 100;
@@ -204,7 +212,7 @@ $json = json_encode($data);
         cardHeader.append("p")
                   .text("show")
                   .on("click", function() {
-                      highlightNode(wallets, "transaction");
+                      highlightNode(wallets);
                   });
     }
 
@@ -214,7 +222,7 @@ $json = json_encode($data);
         const nodeInputs = transactionData.nodeInputs;
         const nodeOutputs = transactionData.nodeOutputs;
 
-        console.log(transactionInfo);
+        console.log(transactionData);
         const table = card.append('table').attr('class', 'table table-striped');
         const tbody = table.append('tbody');
         
@@ -284,7 +292,7 @@ $json = json_encode($data);
                 item.append("p")
                     .text("show")
                     .on("click", function() {
-                        highlightNode(d.wallet, "wallet");
+                        highlightNode(d.wallet);
                     });
             } else {
                 item.append("hr").attr("class", "dashed");
@@ -417,38 +425,24 @@ $json = json_encode($data);
 
 
     function getRadius(nodeData) {
-      totalSentUsd = nodeData.totalSent.valueUsd;
-      totalReceivedUsd = nodeData.totalReceived.valueUsd;
-      const difference = Math.abs(totalSentUsd - totalReceivedUsd);
+        totalSentUsd = nodeData.totalSent.valueUsd;
+        totalReceivedUsd = nodeData.totalReceived.valueUsd;
+        const difference = Math.abs(totalSentUsd - totalReceivedUsd);
 
-      if (difference <= 100) {
-        return 4;
-      } else if (difference <= 1000) {
-        return 7;
-      }else if (difference <= 10000) {
-        return 9;
-      }else if (difference <= 100000) {
-        return 11;
-      }else if (difference <= 500000) {
-        return 13;
-      }else{
-        return 15;
-      }
+        if (difference <= 100) {
+          return 4;
+        } else if (difference <= 1000) {
+          return 7;
+        }else if (difference <= 10000) {
+          return 9;
+        }else if (difference <= 100000) {
+          return 11;
+        }else if (difference <= 500000) {
+          return 13;
+        }else{
+          return 15;
+        }
     }
-
-    // function getTransactionsByWallet(transactions, wallet) {
-    //     // Find all the transaction hashes where the wallet is involved
-    //     const involvedTransactions = transactions.filter((transaction) => 
-    //         transaction.sender === wallet || transaction.receiver === wallet
-    //     ).map((transaction) => 
-    //         transaction.transaction_hash
-    //     );
-        
-    //     // Now, return all transactions which have transaction_hash present in involvedTransactionHashes
-    //     return transactions.filter((transaction) => 
-    //         involvedTransactions.includes(transaction.transaction_hash)
-    //     );
-    // }
 
     function setColor(nodeData){
         let totalSent = nodeData.totalSent.value;
@@ -482,43 +476,191 @@ $json = json_encode($data);
     //         .call(zoom.transform, d3.zoomIdentity.translate(-x, -y));
     // }
 
-    function highlightNode(selectedNode, type) {
+    function highlightNode(selectedNode) {
         node = d3.selectAll('circle');
         node.attr('stroke', "none");
 
+        //SelectedNode may be as one wallet address, as an array of wallet addresses
         let nodeObjects = null;
-        if (type === 'wallet'){
-            nodeObjects = node.filter((d) => d.id === selectedNode);
-        }else if (type === 'transaction'){
-            nodeObjects = node.filter((d) => selectedNode.includes(d.id));
-        }
+        nodeObjects = node.filter((d) => selectedNode.includes(d.id));
 
         if (nodeObjects != null){
             nodeObjects.attr('stroke', 'orange').attr('stroke-width', 3).attr('stroke-opacity', 1);
         }else{
             alert("Some internal error occured! The wallet you have chosen doesn't exist in the graph!");
         }
-
-        //zoomToNode(nodeObjects);
-        //d3.select(selectedNode).attr('stroke', 'orange');
-        // If there was a previously selected node, reset its color
-        // if (selectedNode) {
-        //     d3.select(selectedNode).attr('fill', setColor);
-        // }
-        // d3.select(clickedNode).attr('fill', 'red');
-        // return clickedNode;
     }
 
-    function removeDuplicates(array) {
-      return array.filter((item, index) => {
-        return array.indexOf(item) === index;
-      });
+    // Helper function of highlightSearch()
+
+    function highlightSearch() {
+        //const nodesHighlighted = new Set();
+        // let highlightNode = false;
+
+        // const searchTransactionHash = document.getElementById('transaction-hash').value;
+        const inputAddress = document.getElementById('input-address').value;
+        const outputAddress = document.getElementById('output-address').value;
+        // const searchBlockId = document.getElementById('block-id').value;
+        // const searchStartTimestamp = document.getElementById('start-timestamp').value;
+        // const searchEndTimestamp = document.getElementById('end-timestamp').value;
+        if (inputAddress != '' && outputAddress != ''){
+            highlightNode([inputAddress, outputAddress]);
+        }
+        else if (inputAddress != ''){
+            highlightNode(inputAddress);
+        }else if (outputAddress != ''){
+            highlightNode(outputAddress);
+        }if (inputAddress != '' || outputAddress != ''){
+            return;
+        }else{
+            $.ajax({
+              type: "POST",
+              url: "/GitHub/chainfinder/schema/controller/AjaxController.php", 
+              dataType: 'json',
+              cache: false,
+              data: {
+                'requestType': "highlight",
+                "transactionHash": document.getElementById('transaction-hash').value,
+                "blockId": document.getElementById('block-id').value,
+                "startTimestamp": document.getElementById('start-timestamp').value,
+                "endTimestamp": document.getElementById('end-timestamp').value
+              },
+              success: function(response) {
+                if (response != "highlightAllNodes"){
+                    let nodesHighlighted = new Set(response.flatMap(object => [object.sender, object.receiver])); // only keep a value if it's the first occurrence   
+                    nodesHighlighted = Array.from(nodesHighlighted);
+                    highlightNode(nodesHighlighted)
+                    console.log(nodesHighlighted);
+                }
+              },
+              error: function() {
+                console.log("Cannot highlight nodes (AJAX request failed)");
+              }
+            });
+        }
+
+        // node = d3.selectAll('circle');
+        // node.each(function(nodeData) {
+        //     // 'this' refers to the current node element
+        //     for (const [TransactionHash, transactionData] of nodeData.transactions.entries()){
+        //         if (searchTransactionHash != '' && searchTransactionHash != TransactionHash){
+        //             console.log("hash");
+        //             continue;
+        //         }
+        //         if (searchInputAddress != '' && transactionData.senderWallets.some(obj => obj.wallet === searchInputAddress)){
+        //             console.log("input");
+        //             continue;
+        //         }
+        //         if (searchOutputAddress != '' && transactionData.receiverWallets.some(obj => obj.wallet === searchOutputAddress)){
+        //             console.log("output");
+        //             continue;
+        //         }
+        //         if (searchBlockId != '' && transactionData.blockId != searchBlockId){
+        //             console.log("block");
+        //             continue;
+        //         }
+        //         highlightNode = true;
+        //         break;
+        //         // if (searchStartTimestamp != '' && transactionHash != searchTransactionHash){
+        //         //     return false;
+        //         // }
+        //         // if (searchEndTimestamp != '' && transactionHash != searchTransactionHash){
+        //         //     return false;
+        //         // }
+        //     }
+        //     if (highlightNode){
+        //         nodesHighlighted.add(nodeData.id);
+        //     }
+
+        // });
+        // console.log(nodesHighlighted);
+
+    }
+
+    function expandSearch() {
+        $.ajax({
+              type: "POST",
+              url: "/GitHub/chainfinder/schema/controller/AjaxController.php", 
+              dataType: 'json',
+              cache: false,
+              data: {
+                'requestType': "expand",
+                "transactionHash": document.getElementById('transaction-hash').value,
+                "inputAddress": document.getElementById('input-address').value,
+                "outputAddress": document.getElementById('output-address').value,
+                "blockId": document.getElementById('block-id').value,
+                "connectionsCount": document.getElementById('connections-count').value,
+                "startTimestamp": document.getElementById('start-timestamp').value,
+                "endTimestamp": document.getElementById('end-timestamp').value
+              },
+              success: function(response) {
+                    newData = Array.from(new Set(response.map(JSON.stringify))).map(JSON.parse);
+                    console.log(newData);
+                    update(newData);
+
+              },
+              error: function() {
+                console.log("Cannot expand nodes (AJAX request failed)");
+              }
+            });
+
+        // // Add new node
+        // let transactions = getUniqueTransactions(newNodeId, data);
+        // let totalSent = {value: 0, valueUsd: 0};
+        // let totalReceived = {value: 0, valueUsd: 0};
+        // transactions.forEach((txData) => {
+        //     totalSent = getTotalSum(totalSent, txData.nodeInputs);
+        //     totalReceived = getTotalSum(totalReceived, txData.nodeOutputs);
+        // });
+        // nodes.push({
+        //     id: newNodeId,
+        //     totalSent: totalSent,
+        //     totalReceived: totalReceived,
+        //     transactions: transactions
+        // });
+
+        // // Add new links
+        // for (let i = 0; i < data.length; i++) {
+        //     if (data[i].sender === newNodeId || data[i].receiver === newNodeId) {
+        //         let obj = { source: data[i].sender, target: data[i].receiver };
+        //         let key = data[i].sender + '-' + data[i].receiver;
+        //         if (!links.has(key)) {
+        //             links.set(key, obj);
+        //         }
+        //     }
+        // }
+
+        // // Turn unique links (node pairs) to array
+        // links = [...links.values()];
+
+        // Re-bind the nodes and links data:
+        node = nodeGroup.selectAll('circle').data(nodes, d => d.id);
+        link = linkGroup.selectAll('line').data(links);
+
+        // Enter new nodes and links:
+        node.enter().append('circle')
+            .attr('r', getRadius)
+            .attr('fill', setColor)
+            .on('click', function(event, d) { 
+                // copy the logic from your existing node click handler
+            });
+        
+        link.enter().append('line')
+            .attr('stroke', '#999')
+            .attr('opacity', 0.45)
+            .attr('stroke-width', 0.5);
+
+        // Finally, restart the simulation:
+        simulation.nodes(nodes);
+        simulation.force("link").links(links);
+        simulation.alpha(1).restart();
     }
 
     // update the links and nodes when data changes
-    function update(data) {
-        const nodeIDs = new Set(data.flatMap(d => [d.sender, d.receiver]));
-
+function update(data){
+        nodeIDs = new Set([...nodeIDs, ...(data.flatMap(d => [d.sender, d.receiver]))]);
+        console.log(nodeIDs);
+        console.log(nodeIDs.length);
         // helper function
         function getTotalSum(totalSum, operations){
             for (i = 0; i < operations.length; i++){
@@ -527,7 +669,7 @@ $json = json_encode($data);
             }
             return totalSum;
         }
-        const nodes = Array.from(nodeIDs).map(id => {
+        nodes = Array.from(nodeIDs).map(id => {
             let transactions = getUniqueTransactions(id, data);
             let totalSent = {value: 0, valueUsd: 0};
             let totalReceived = {value: 0, valueUsd: 0};
@@ -543,22 +685,24 @@ $json = json_encode($data);
             };
         });
         
-        // Create links from data
-        let links = [];
+
+        // Add unique links from data
+        links = new Map();
         for (let i = 0; i < data.length; i++) {
-            const { sender, receiver } = data[i];
-            links.push({ source: sender, target: receiver });
+            let obj = { source: data[i].sender, target: data[i].receiver };
+            let key = data[i].sender + '-' + data[i].receiver;
+            links.set(key, obj);
         }
-        links = removeDuplicates(links);
 
-        // For some reason, this method copies a bunch of other unnecessary data to a links list
-        //const links = data.map(d => ({ source: d.sender.id, target: d.receiver.id }));
-
+        // Turn unique links (node pairs) to array
+        links = [...links.values()];
+    }
+    update(data);
 
         // Обновление links
         var link = linkGroup
             .selectAll('line')
-            .data(links, d => d.source + '-' + d.target)
+            .data(links)
             .join('line')
             .attr('stroke', '#999')
             .attr('opacity', 0.45)
@@ -580,9 +724,6 @@ $json = json_encode($data);
         
             return acc;
         }, {});
-    
-        // variable that contain data of chosen node
-        let selectedNode = null;
 
         // Update nodes
         var node = nodeGroup
@@ -656,8 +797,5 @@ $json = json_encode($data);
 
         node.append('title')
           .text(d => d.id);
-    }
-
-    update(data);
 
     </script>

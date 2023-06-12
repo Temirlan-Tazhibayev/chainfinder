@@ -39,13 +39,13 @@ if (isset($_POST['requestType'])){
         
             // Sender
             if (!empty($_POST['inputAddress'])) {
-                $conditions[] = "a.recipient LIKE ?";
+                $conditions[] = "sender LIKE ?";
                 $params[] = $_POST['inputAddress'] . '%';
             }
         
             // Receiver
             if (!empty($_POST['outputAddress'])) {
-                $conditions[] = "b.recipient LIKE ?";
+                $conditions[] = "receiver LIKE ?";
                 $params[] = $_POST['outputAddress'] . '%';
             }
         
@@ -68,6 +68,17 @@ if (isset($_POST['requestType'])){
                 $conditions[] = "b.time <= ?";
                 $params[] = $end_date->format('Y-m-d H:i:s');
             }
+
+            // if (!empty($_POST['displayedNodes'])) {
+
+            //     $questions = array_fill(0, count($_POST['displayedNodes']), '?');
+            //     $questions = "(" . implode(", ", $questions) . ")";
+
+            //     $conditions[] = "a.recipient IN " . $questions;
+            //     $params = [...$params, ...$_POST['displayedNodes']];
+            //     $conditions[] = "b.recipient IN " . $questions;
+            //     $params = [...$params, ...$_POST['displayedNodes']];
+            // }
         
             // Add the conditions to the query
             if ($conditions) {
@@ -75,11 +86,11 @@ if (isset($_POST['requestType'])){
             }
             
             // Add the limit to the query
-            if (isset($requestData['connectionsCount'])) {
+            if (isset($_POST['connectionsCount'])) {
                 $query .= " LIMIT ?";
-                $params[] = $requestData['connectionsCount'];
+                $params[] = $_POST['connectionsCount'];
             }
-
+            // echo json_encode($params);
             // Add the conditions to the query
             if (count($params) >= 1) {
                 
@@ -91,11 +102,13 @@ if (isset($_POST['requestType'])){
                 echo json_encode($rows);
             }else if ($_POST['requestType'] == 'highlight'){
                 echo json_encode("highlightAllNodes");
+            }else{
+                echo json_encode("noParameters");
             }
             $conn = null;
-        } catch (\PDOException $ex) {
-            \schema\model\Logger::log($ex);
-            d($ex->getMessage() . $ex->getTraceAsString());
+        }catch (\PDOException $ex) {
+            echo $ex->getMessage();
+            echo $ex->getTraceAsString();
         }
 
 }

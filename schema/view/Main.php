@@ -1,4 +1,4 @@
-<?php require_once WWW_PATH . '/schema/view/head.php'; 
+<?php require_once WWW_PATH . '/schema/view/head.php';
 
 $json = json_encode($data);
 
@@ -9,73 +9,72 @@ $json = json_encode($data);
 <title>Page Title</title>
 <style>
     hr.dashed {
-	    border-top: 1px dashed #8c8b8b;
+	    border-top: 1px dashed white;
     }
 </style>
 </head>
-<body>
-  
+<body class="bg-white">
+
 <div class="container-fluid">
-    <div class="row">
+    <div class="row no-gutters"> <!-- no gutters = no gaps between columns -->
         <div class="col-sm-3">
-            <h2>Transactions</h2>
-            <div class="scrollable-container">
+            <h2 class="text-center">Transactions</h2>
+            <div class="scrollable-container bg-light">
             </div>
         </div>
         <div class="col-sm-6">
-            <h2>Graph</h2>
+            <h2 class="text-center">Graph-Map</h2>
             <div id="graph-container"></div>
         </div>
         <div class="col-sm-3">
+            <h2 class="text-center">Transaction Search</h2>
             <div class="form-container">
-                <h3>Bitcoin Transaction Search</h3>
-                <form action="" method="post">
-                    <br>
+                <form action="" method="post" class="text-dark">
                     <label for="transaction-hash">Transaction hash:</label>
                     <div class="input-group">
-                        <input class="form-control" type="text" value="<?php echo isset($_SESSION['transactionHash']) ? htmlspecialchars($_SESSION['transactionHash']) : ''; ?>" name="transaction-hash" id="transaction-hash" placeholder="Enter transaction hash">
+                        <input class="form-control" type="text" value="<?php echo isset($_SESSION['transactionHash']) ? htmlspecialchars($_SESSION['transactionHash']) : ''; ?>" name="transaction-hash" id="transaction-hash" placeholder="">
                     </div>
-        
-                    <hr>              
-            
+
+                    <hr>
+
                     <div class="row">
                         <div class="col-sm-6">
                             <label for="input-address">Sender Address:</label>
                             <div class="input-group">
-                                <input class="form-control" type="text" value="<?php echo isset($_SESSION['inputAddress']) ? htmlspecialchars($_SESSION['inputAddress']) : ''; ?>" name="input-address" id="input-address" placeholder="Enter input address">
+                                <input class="form-control" type="text" value="<?php echo isset($_SESSION['inputAddress']) ? htmlspecialchars($_SESSION['inputAddress']) : ''; ?>" name="input-address" id="input-address" placeholder="">
                             </div>
                         </div>
-        
+
                         <div class="col-sm-6">
                             <label for="output-address">Receiver Address:</label>
                             <div class="input-group">
-                                <input class="form-control" type="text" value="<?php echo isset($_SESSION['outputAddress']) ? htmlspecialchars($_SESSION['outputAddress']) : ''; ?>" name="output-address" id="output-address" placeholder="Enter output address">
+                                <input class="form-control" type="text" value="<?php echo isset($_SESSION['outputAddress']) ? htmlspecialchars($_SESSION['outputAddress']) : ''; ?>" name="output-address" id="output-address" placeholder="">
                             </div>
                         </div>
                     </div>
-        
-                    <hr>              
-            
+
+                    <hr>
+
                     <div class="row">
                         <div class="col-sm-6">
                             <label for="block-id">Block ID:</label>
                             <div class="input-group">
-                                <input class="form-control" type="number" value="<?php echo isset($_SESSION['blockId']) ? htmlspecialchars($_SESSION['blockId']) : ''; ?>" name="block-id" id="block-id" placeholder="Enter block ID">
+                                <input class="form-control" type="number" value="<?php echo isset($_SESSION['blockId']) ? htmlspecialchars($_SESSION['blockId']) : ''; ?>" name="block-id" id="block-id" placeholder="">
                             </div>
                         </div>
-        
+
                         <div class="col-sm-6">
                             <label for="connections-count">Connections number:</label>
                             <div class="input-group">
-                                <input class="form-control" type="number" value="<?php echo isset($_SESSION['connectionsCount']) ? htmlspecialchars($_SESSION['connectionsCount']) : ''; ?>" name="connections-count" id="connections-count" placeholder="Enter transaction count">
+                                <input class="form-control" type="number" value="<?php echo isset($_SESSION['connectionsCount']) ? htmlspecialchars($_SESSION['connectionsCount']) : ''; ?>" name="connections-count" id="connections-count" placeholder="">
                             </div>
                         </div>
                     </div>
-        
+
                     <hr>
-        
-                    <div>            
-                        <h5>Transaction period:</h5>
+
+                    <div>
+                        <h5 style="text-align: center">Transaction period</h5>
                         <div class="row">
                             <div class="col-sm-6">
                                 <label for="start-timestamp">From:</label>
@@ -83,7 +82,7 @@ $json = json_encode($data);
                                     <input class="form-control" type="datetime-local" id="start-timestamp" name="start-timestamp" value="<?php echo isset($_SESSION['startTimestamp']) ? htmlspecialchars($_SESSION['startTimestamp']) : ''; ?>">
                                 </div>
                             </div>
-        
+
                             <div class="col-sm-6">
                                 <label for="end-timestamp">Until:</label>
                                 <div class="input-group">
@@ -92,21 +91,28 @@ $json = json_encode($data);
                             </div>
                         </div>
                     </div>
+                    <br>
                     <div class="input-group mt-2">
-                        <input class="form-control btn btn-primary" type="submit" value="Search">
+                        <button class="btn btn-block bg-dark text-white" type="submit" value="Search">Search</button>
+                        <!-- <div class="col-sm-6">
+                            Если будет какая-та проблема с нажатием поиска нужно button > input
+                        </div> -->
                     </div>
-                </form>
-                <div class="row">
-                    <div class="col-sm-6">
-                        <button class="btn btn-primary" type="button" onclick="highlightSearch()">Highlight on Graph</button>
-                    </div>
-                    <div class="col-sm-6">
-                        <button class="btn btn-primary" type="button" onclick="expandSearch()">Expand node</button>
+                    <br>
+                    <div class="row">
+                    <div class="col-12">
+                        <button class="btn btn-block bg-dark text-white" type="button" onclick="highlightSearch()">Highlight on Graph</button>
                     </div>
                     <!-- <div class="col-sm-6">
                         <button class="btn btn-primary" type="button" onclick="">Highlight on Graph</button>
                     </div> -->
                 </div>
+                </form>
+                <!-- <div class="row">
+                    <div class="col-sm-6">
+                        <button class="btn bg-dark text-white" type="button" onclick="highlightSearch()">Highlight on Graph</button>
+                    </div>
+                </div> -->
             </div>
         </div>
     </div>
@@ -117,12 +123,13 @@ $json = json_encode($data);
 <!-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------->
 
 <script>
-    var data = <?php echo $json ?>;
     var nodes;
     var links;
     var nodeIDs = [];
     // variable that contain data of chosen node
     var selectedNode = null;
+
+    var data = <?php echo $json ?>;
     data = Array.from(new Set(data.map(JSON.stringify))).map(JSON.parse);
     const width = 100;
     const height = 100;
@@ -161,30 +168,47 @@ $json = json_encode($data);
 
     function createHeader(nodeData){
         const transactionCount = nodeData.transactions.size;
-        
+
         const scrollableContainer = d3.select('.scrollable-container');
         scrollableContainer.append('div').attr('class', 'header').style('word-break', 'break-all')
-            .append('h5')
-            .text("Wallet: ")
-            .append('a') 
-            .attr('href', `https://blockchair.com/bitcoin/address/${nodeData.id}`) 
-            .attr('target', '_blank')
-            .text(nodeData.id);
+          .append('span')
+          .attr('style', 'font-weight: normal;')
+          .text("Wallet: ")
+          .append('i')
+          .attr('class', 'fa fa-external-link-alt')
+          .append('a')
+          .attr('style', 'font-weight: 300;')
+          .attr('href', `https://blockchair.com/bitcoin/address/${nodeData.id}`)
+          .attr('target', '_blank')
+          .text(nodeData.id);
 
         scrollableContainer.append('div').attr('class', 'header').style('word-break', 'break-word')
-            .append('h5')
-            .text(`Number of Transactions: ${transactionCount}`)
+            .attr('style', 'padding-top:15px;')
+            .append('span')
+            .attr('style','font-weight: normal')
+            .text(`Number of Transactions: `)
+            .append('span')
+            .attr('style','font-weight: 300')
+            .text(transactionCount)
 
         scrollableContainer.append('div').attr('class', 'header').style('word-break', 'break-word')
-            .append('h5')
-            .text(`Sent: ${nodeData.totalSent.value/100000000} BTC | ${nodeData.totalSent.valueUsd.toFixed(2)} USD`)
+            .append('span')
+            .attr('style','font-weight: normal')
+            .text(`Sent: `)
+            .append('span')
+            .attr('style','font-weight: 300')
+            .text (`${nodeData.totalSent.value/100000000} BTC | ${nodeData.totalSent.valueUsd.toFixed(2)} USD`)
 
         scrollableContainer.append('div').attr('class', 'header').style('word-break', 'break-word')
-            .append('h5')
-            .text(`Received: ${nodeData.totalReceived.value/100000000} BTC | ${nodeData.totalReceived.valueUsd.toFixed(2)} USD`)
-            
+            .append('span')
+            .attr('style','font-weight: normal')
+            .text(`Received: `)
+            .append('span')
+            .attr('style','font-weight: 300')
+            .text(`${nodeData.totalReceived.value/100000000} BTC | ${nodeData.totalReceived.valueUsd.toFixed(2)} USD`)
+
     }
-    
+
     // Create Card with Header and Body
     function createCard(transactionHash, transactionData) {
         const scrollableContainer = d3.select('.scrollable-container');
@@ -200,20 +224,22 @@ $json = json_encode($data);
     // Add Card Header
     function addCardHeader(card, transactionHash, wallets) {
         let cardHeader = card.append('div')
-                    .attr('class', 'card-header');
+                    .attr('class', 'card-header text-center');
 
-        cardHeader.append('h5')
+        cardHeader.append('span')
+                  .attr('style','font-weight: normal; font-size: 16px;')
                   .text("Transaction hash: ")
-                  .append('a') 
-                  .attr('href', `https://blockchair.com/bitcoin/transaction/${transactionHash}`) 
+                  .append('a')
+                  .attr('href', `https://blockchair.com/bitcoin/transaction/${transactionHash}`)
                   .attr('target', '_blank')
                   .text(transactionHash);
 
-        cardHeader.append("p")
-                  .text("show")
+        cardHeader.append("button")
+                  .attr('class','btn btn-sm btn-outline-dark text-center')
                   .on("click", function() {
                       highlightNode(wallets);
-                  });
+                  })
+                  .html('<span class="font-weight-italic" style="margin-right: 5px; text-align:center;">Show/Highlight</span><i class="fa fa-eye"></i>');
     }
 
     // Add Card Body
@@ -223,9 +249,9 @@ $json = json_encode($data);
         const nodeOutputs = transactionData.nodeOutputs;
 
         console.log(transactionData);
-        const table = card.append('table').attr('class', 'table table-striped');
+        const table = card.append('table').attr('class', 'table table-striped scrolling-table');
         const tbody = table.append('tbody');
-        
+
         const labels = [
             { label: 'Total (Bitcoin)', value:  (transactionInfo.totalValue/100000000) },
             { label: 'Total (USD)', value:  transactionInfo.totalValueUsd.toFixed(2) },
@@ -235,7 +261,7 @@ $json = json_encode($data);
 
         const sendersHeader = `Total Inputs (${transactionInfo.sendersNumber})`;
         const receiversHeader = `Total Outputs (${transactionInfo.receiversNumber})`;
-    
+
         addRowsToTableBody(tbody, labels);
         // Add transaction inputs and outputs of the node wallet only
         if (nodeInputs.length > 0){
@@ -249,70 +275,80 @@ $json = json_encode($data);
         addCollapsibleList(tbody, sendersHeader, transactionData.senderWallets);
         addCollapsibleList(tbody, receiversHeader, transactionData.receiverWallets);
     }
-    
+
     function addRowsToTableBody(tbody, labels) {
         const rows = tbody.selectAll('tr').data(labels).join('tr');
-    
+
         rows.append('td')
-            .html(d => d.url ? `<strong>${d.label}:</strong> <a href="${d.url}" target="_blank">${d.value}</a>` 
+            .html(d => d.url ? `<strong>${d.label}:</strong> <a href="${d.url}" target="_blank">${d.value}</a>`
                              : `<strong>${d.label}:</strong> ${d.value}`);
     }
-    
+
 
     function addCollapsibleList(parentElement, headerData, listData) {
         const listGroup = parentElement
             .append('tr')
+            .attr('class','bg-dark text-white')
             .append('td')
             .attr('colspan', '2')
             .style('word-break', 'break-all');
-    
+
         const listHeader = listGroup.append('div')
-            .text(headerData)
-            .style('cursor', 'pointer')
-            .style('word-break', 'break-word')
-            .attr('class', 'text-info');
-    
+          .attr('class', 'rounded');
+
+        listHeader.append('i')
+          .attr('class', 'fa fa-caret-down') // Replace 'fa-icon-class' with the appropriate Font Awesome icon class
+          .style('margin-right', '5px'); // Adjust the margin as needed
+
+        listHeader.append('span')
+          .text(headerData)
+          .style('cursor', 'pointer')
+          .style('word-break', 'break-word');
+
+
         const listItems = listGroup.selectAll('div.list-item')
             .data(listData)
             .join('div')
             .attr('class', 'list-item')
             .style('display', 'none')
 
-        listItems.each(function (d) {
-            const item = d3.select(this);
-            if (d.wallet) {
-                item.append("hr").attr("class", "dashed");
-                item.append("a")
-                    .attr("href", "https://blockchair.com/bitcoin/address/" + d.wallet)
-                    .attr("target", "_blank")
-                    .attr("class", "text-success")
-                    .text(d.wallet);
-                item.append("br");
-                item.append("strong").text(`Bitcoin: ${d.value/100000000}, USD: ${Number(d.valueUsd).toFixed(2)}`);
-                item.append("p")
-                    .text("show")
-                    .on("click", function() {
-                        highlightNode(d.wallet);
-                    });
-            } else {
-                item.append("hr").attr("class", "dashed");
-                item.append("strong").text(`Bitcoin: ${d.value/100000000}, USD: ${Number(d.valueUsd).toFixed(2)}`);
-            }
-        });
-        
+            listItems.each(function (d) {
+      const item = d3.select(this);
+      if (d.wallet) {
+        item.append("hr").attr("class", "dashed");
+        item.append("a")
+          .attr("href", "https://blockchair.com/bitcoin/address/" + d.wallet)
+          .attr("target", "_blank")
+          .attr("class", "text-success")
+          .text(d.wallet);
+        item.append("br");
+        item.append("strong").text(`Bitcoin: ${d.value/100000000}, USD: ${Number(d.valueUsd).toFixed(2)}`);
+        item.append("p")
+          .attr('style','font-weight: 300; font-size: 12px')
+          .html('Show <i class="fa fa-eye fa-xs"></i>')
+          .on("click", function() {
+            highlightNode(d.wallet);
+          });
+      } else {
+        item.append("hr").attr("class", "dashed");
+        item.append("strong").text(`Bitcoin: ${d.value/100000000}, USD: ${Number(d.valueUsd).toFixed(2)}`);
+      }
+    });
+
+
         listHeader.on('click', function () {
             const displayStyle = listItems.style('display');
             listItems.style('display', displayStyle === 'none' ? 'block' : 'none');
         });
     }
-    
-    
+
+
     // Main function that displays data on the left window
     function displayNodeInfo(nodeData) {
         removePreviousData();
-    
+
         createHeader(nodeData);
-    
+
         nodeData.transactions.forEach((transactionData, transactionHash) => {
             createCard(transactionHash, transactionData);
         });
@@ -320,10 +356,10 @@ $json = json_encode($data);
 /* *********************************************************************************************************************************************************************************** */
 
     function getUniqueTransactions(nodeId, data) {
-        
-        const involvedTransactions = data.filter((transaction) => 
+
+        const involvedTransactions = data.filter((transaction) =>
             transaction.sender === nodeId || transaction.receiver === nodeId
-        ).map((transaction) => 
+        ).map((transaction) =>
             transaction.transaction_hash
         );
         const uniqueTransactions = new Map();
@@ -348,14 +384,14 @@ $json = json_encode($data);
         }
 
         function getNodeOperations(wallets){
-        
+
             // Filter the wallets that match the node ID
             let nodeOperations = wallets.filter(wallet => wallet.wallet === nodeId);
-        
+
             // Map over the filtered wallets and return an object of value and valueUsd
             return nodeOperations.map(wallet => {
-                return { 
-                    value: wallet.value, 
+                return {
+                    value: wallet.value,
                     valueUsd: parseFloat(wallet.valueUsd)
                 };
             });
@@ -386,7 +422,7 @@ $json = json_encode($data);
                 nodeOutputs = getNodeOperations(receiverWallets);
                 totalValue = calculateTotal(senderWallets, receiverWallets, 'value');
                 totalValueUsd = calculateTotal(senderWallets, receiverWallets, 'valueUsd');
-            
+
                 const transactionInfo = {
                     transactionHash: transactionFlag,
                     totalValue: totalValue,
@@ -414,7 +450,7 @@ $json = json_encode($data);
                 }else{
                     senderWallets.push({ wallet: transaction.sender, value: transaction.sent_value, valueUsd: transaction.sent_usd})
                     receiverWallets.push({ wallet: transaction.receiver, value: transaction.received_value, valueUsd: transaction.received_usd})
-                
+
                 }
             }
         });
@@ -491,12 +527,10 @@ $json = json_encode($data);
         }
     }
 
-    // Helper function of highlightSearch()
-
     function highlightSearch() {
         //const nodesHighlighted = new Set();
         // let highlightNode = false;
-
+        // console.log(nodes.map(nodeData => nodeData.id));
         // const searchTransactionHash = document.getElementById('transaction-hash').value;
         const inputAddress = document.getElementById('input-address').value;
         const outputAddress = document.getElementById('output-address').value;
@@ -520,12 +554,14 @@ $json = json_encode($data);
               cache: false,
               data: {
                 'requestType': "highlight",
+                //'displayedNodes': nodes.map(nodeData => nodeData.id),
                 "transactionHash": document.getElementById('transaction-hash').value,
-                "blockId": document.getElementById('block-id').value,
+                // "blockId": document.getElementById('block-id').value,
                 "startTimestamp": document.getElementById('start-timestamp').value,
                 "endTimestamp": document.getElementById('end-timestamp').value
               },
               success: function(response) {
+                console.log("JS NOW");
                 if (response != "highlightAllNodes"){
                     let nodesHighlighted = new Set(response.flatMap(object => [object.sender, object.receiver])); // only keep a value if it's the first occurrence   
                     nodesHighlighted = Array.from(nodesHighlighted);
@@ -533,134 +569,18 @@ $json = json_encode($data);
                     console.log(nodesHighlighted);
                 }
               },
-              error: function() {
-                console.log("Cannot highlight nodes (AJAX request failed)");
+              error: function(jqXHR, textStatus, errorThrown) {
+                  console.log(jqXHR, textStatus, errorThrown);
               }
             });
         }
-
-        // node = d3.selectAll('circle');
-        // node.each(function(nodeData) {
-        //     // 'this' refers to the current node element
-        //     for (const [TransactionHash, transactionData] of nodeData.transactions.entries()){
-        //         if (searchTransactionHash != '' && searchTransactionHash != TransactionHash){
-        //             console.log("hash");
-        //             continue;
-        //         }
-        //         if (searchInputAddress != '' && transactionData.senderWallets.some(obj => obj.wallet === searchInputAddress)){
-        //             console.log("input");
-        //             continue;
-        //         }
-        //         if (searchOutputAddress != '' && transactionData.receiverWallets.some(obj => obj.wallet === searchOutputAddress)){
-        //             console.log("output");
-        //             continue;
-        //         }
-        //         if (searchBlockId != '' && transactionData.blockId != searchBlockId){
-        //             console.log("block");
-        //             continue;
-        //         }
-        //         highlightNode = true;
-        //         break;
-        //         // if (searchStartTimestamp != '' && transactionHash != searchTransactionHash){
-        //         //     return false;
-        //         // }
-        //         // if (searchEndTimestamp != '' && transactionHash != searchTransactionHash){
-        //         //     return false;
-        //         // }
-        //     }
-        //     if (highlightNode){
-        //         nodesHighlighted.add(nodeData.id);
-        //     }
-
-        // });
-        // console.log(nodesHighlighted);
-
-    }
-
-    function expandSearch() {
-        $.ajax({
-              type: "POST",
-              url: "/GitHub/chainfinder/schema/controller/AjaxController.php", 
-              dataType: 'json',
-              cache: false,
-              data: {
-                'requestType': "expand",
-                "transactionHash": document.getElementById('transaction-hash').value,
-                "inputAddress": document.getElementById('input-address').value,
-                "outputAddress": document.getElementById('output-address').value,
-                "blockId": document.getElementById('block-id').value,
-                "connectionsCount": document.getElementById('connections-count').value,
-                "startTimestamp": document.getElementById('start-timestamp').value,
-                "endTimestamp": document.getElementById('end-timestamp').value
-              },
-              success: function(response) {
-                    newData = Array.from(new Set(response.map(JSON.stringify))).map(JSON.parse);
-                    console.log(newData);
-                    update(newData);
-
-              },
-              error: function() {
-                console.log("Cannot expand nodes (AJAX request failed)");
-              }
-            });
-
-        // // Add new node
-        // let transactions = getUniqueTransactions(newNodeId, data);
-        // let totalSent = {value: 0, valueUsd: 0};
-        // let totalReceived = {value: 0, valueUsd: 0};
-        // transactions.forEach((txData) => {
-        //     totalSent = getTotalSum(totalSent, txData.nodeInputs);
-        //     totalReceived = getTotalSum(totalReceived, txData.nodeOutputs);
-        // });
-        // nodes.push({
-        //     id: newNodeId,
-        //     totalSent: totalSent,
-        //     totalReceived: totalReceived,
-        //     transactions: transactions
-        // });
-
-        // // Add new links
-        // for (let i = 0; i < data.length; i++) {
-        //     if (data[i].sender === newNodeId || data[i].receiver === newNodeId) {
-        //         let obj = { source: data[i].sender, target: data[i].receiver };
-        //         let key = data[i].sender + '-' + data[i].receiver;
-        //         if (!links.has(key)) {
-        //             links.set(key, obj);
-        //         }
-        //     }
-        // }
-
-        // // Turn unique links (node pairs) to array
-        // links = [...links.values()];
-
-        // Re-bind the nodes and links data:
-        node = nodeGroup.selectAll('circle').data(nodes, d => d.id);
-        link = linkGroup.selectAll('line').data(links);
-
-        // Enter new nodes and links:
-        node.enter().append('circle')
-            .attr('r', getRadius)
-            .attr('fill', setColor)
-            .on('click', function(event, d) { 
-                // copy the logic from your existing node click handler
-            });
-        
-        link.enter().append('line')
-            .attr('stroke', '#999')
-            .attr('opacity', 0.45)
-            .attr('stroke-width', 0.5);
-
-        // Finally, restart the simulation:
-        simulation.nodes(nodes);
-        simulation.force("link").links(links);
-        simulation.alpha(1).restart();
     }
 
     // update the links and nodes when data changes
-function update(data){
+    function update(data){
         nodeIDs = new Set([...nodeIDs, ...(data.flatMap(d => [d.sender, d.receiver]))]);
         console.log(nodeIDs);
-        console.log(nodeIDs.length);
+
         // helper function
         function getTotalSum(totalSum, operations){
             for (i = 0; i < operations.length; i++){

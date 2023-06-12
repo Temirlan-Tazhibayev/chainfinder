@@ -7,15 +7,19 @@
     <link rel="icon" type="image/png" sizes="32x32" href="src/icon//favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="src/icon//favicon-16x16.png">
     <link rel="manifest" href="src/icon/site.webmanifest">
-    
+
     <link rel="stylesheet" href="src/modules/bootstrap-4.0.0-dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="src/modules/fontawesome-5.15.4/css/all.css">
+
     <!-- <link rel="stylesheet" href="src/modules/select2-4.1.0-rc.0/dist/css/select2.min.css" />
     <link rel="stylesheet" href="src/modules/select2-4.1.0-rc.0/dist/css/select2-bootstrap.min.css" /> -->
     <link rel="stylesheet" href="index.css">
 
     <script src="src/modules/bootstrap-4.0.0-dist/js/bootstrap.min.js"></script>
+    <script src="src/modules/bootstrap-4.0.0-dist/js/bootstrap.bundle.min.js"></script>
     <script src="src/modules/d3-7.8.4/dist/d3.min.js"></script>
     <script type="text/javascript" src="src/modules/jquery-3.6.3/jquery-3.6.3.min.js"></script>
+
     <!-- <script src="src/modules/select2-4.1.0-rc.0/dist/js/select2.min.js"></script> -->
 
 </head>
